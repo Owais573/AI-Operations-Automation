@@ -24,6 +24,8 @@ from backend.api import (
     approvals_router,
     dashboard_router,
 )
+from backend.api.schedules import router as schedules_router
+from backend.scheduler.scheduler import start_scheduler, shutdown_scheduler
 
 logger = get_logger("main")
 
@@ -38,7 +40,9 @@ async def lifespan(app: FastAPI):
     logger.info(f"  Environment: {settings.app_env}")
     logger.info(f"  Debug: {settings.app_debug}")
     logger.info("=" * 60)
+    start_scheduler()
     yield
+    shutdown_scheduler()
     logger.info("AI Operations Automation -- Shutting down")
 
 
@@ -76,6 +80,7 @@ app.include_router(workflows_router)
 app.include_router(reports_router)
 app.include_router(approvals_router)
 app.include_router(dashboard_router)
+app.include_router(schedules_router)
 
 
 # ── Health Check ─────────────────────────────────────────────

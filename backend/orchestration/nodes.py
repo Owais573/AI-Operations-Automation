@@ -130,7 +130,44 @@ async def report_node(state: WorkflowState) -> Dict[str, Any]:
             "top_performers": agg_data.get("top_performers", {})
         }
         result = await agent.run(input_data)
-        return {"report": result}
+
+        # Generate PDF from the markdown report
+        pdf_path = None
+        markdown_content = result.get("report_markdown", "")
+        if markdown_content:
+            import os
+            os.makedirs("reports", exist_ok=True)
+            pdf_path = f"reports/{state['run_id']}.pdf"
+            try:
+                await agent.generate_pdf(markdown_content, pdf_path)
+            except Exception as pdf_err:
+                logger.warning(f"PDF generation failed (non-fatal): {pdf_err}")
+                pdf_path = None
+
+        # Upload PDF to Supabase Storage
+        storage_result = {}
+        if pdf_path:
+            from backend.services.storage import upload_pdf
+            storage_result = await upload_pdf(pdf_path, state["run_id"])
+
+        # Save report to database
+        db = get_db()
+        report_title = result.get("report_title", f"Report for {state['run_id']}")
+        await db.create_report(
+            run_id=state["run_id"],
+            title=report_title,
+            content_markdown=markdown_content,
+            pdf_storage_path=storage_result.get("storage_path"),
+            pdf_public_url=storage_result.get("public_url"),
+        )
+
+        return {
+            "report": {
+                **result,
+                "pdf_path": pdf_path,
+                "storage": storage_result,
+            }
+        }
     except Exception as e:
         logger.error(f"Error in report_node: {e}")
         return {"status": "failed", "error": str(e)}

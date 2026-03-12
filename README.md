@@ -225,7 +225,7 @@ All mock data uses a fixed seed (`Faker.seed(42)`) for reproducibility.
 | Phase 2: Core Agents | Done | All 6 agents (Ingestion, Cleaning, Aggregation, Analysis, Report, Delivery) |
 | Phase 3: Orchestration | Done | LangGraph state machine, workflow persistence, approval gate |
 | Phase 4: API Layer | Done | REST endpoints for workflows, reports, approvals |
-| Phase 5: Delivery & Scheduling | Pending | Slack/Email integration, APScheduler |
+| Phase 5: Delivery & Scheduling | Done | Slack/Email integration, APScheduler, Supabase Storage |
 | Phase 6: Frontend Dashboard | Pending | Next.js dashboard with ShadCN UI |
 | Phase 7: Documentation | Pending | Architecture docs, demo, final polish |
 
