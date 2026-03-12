@@ -4,7 +4,6 @@ Provides helper methods for common CRUD operations on workflow tables.
 """
 
 from datetime import datetime, timezone
-from typing import Any
 from supabase import create_client, Client
 from backend.config import get_settings
 from backend.utils.logger import get_logger

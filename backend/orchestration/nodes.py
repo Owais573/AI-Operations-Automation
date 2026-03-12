@@ -160,7 +160,7 @@ async def deliver_node(state: WorkflowState) -> Dict[str, Any]:
         if state.get("email_recipients"):
             input_data["delivery_channels"].append("email")
             
-        result = await agent.run(input_data)
+        await agent.run(input_data)
         
         # Workflow finishes
         return {

@@ -5,7 +5,6 @@ Provides consistent log formatting across all modules.
 
 import logging
 import sys
-from datetime import datetime
 
 
 class ColoredFormatter(logging.Formatter):
