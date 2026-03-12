@@ -10,7 +10,7 @@ resolution-markers = [
 [[package]]
 name = "ai-operations-automation"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "apscheduler" },
     { name = "faker" },
