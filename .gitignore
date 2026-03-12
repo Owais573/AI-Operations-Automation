@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+
+# Environment
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data (regeneratable)
+# data/*.csv
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Node (frontend)
+node_modules/
+.next/
+out/
+
+# AI Planning Document
+AI Operations Automation MVP Plan.md
