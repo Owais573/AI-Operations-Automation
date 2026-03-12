@@ -10,8 +10,6 @@ Provides:
 
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from typing import Any
-import json
 
 from backend.database.db import DatabaseClient
 from backend.utils.logger import get_logger
