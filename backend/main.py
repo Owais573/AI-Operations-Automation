@@ -18,6 +18,13 @@ from backend.utils.error_handler import (
     validation_exception_handler,
 )
 
+from backend.api import (
+    workflows_router,
+    reports_router,
+    approvals_router,
+    dashboard_router,
+)
+
 logger = get_logger("main")
 
 
@@ -62,6 +69,13 @@ app.add_middleware(
 app.add_exception_handler(Exception, global_exception_handler)
 app.add_exception_handler(AgentExecutionError, agent_exception_handler)
 app.add_exception_handler(DataValidationError, validation_exception_handler)
+
+# ── Routers ──────────────────────────────────────────────────
+
+app.include_router(workflows_router)
+app.include_router(reports_router)
+app.include_router(approvals_router)
+app.include_router(dashboard_router)
 
 
 # ── Health Check ─────────────────────────────────────────────
