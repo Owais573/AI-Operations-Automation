@@ -226,7 +226,7 @@ All mock data uses a fixed seed (`Faker.seed(42)`) for reproducibility.
 | Phase 3: Orchestration | Done | LangGraph state machine, workflow persistence, approval gate |
 | Phase 4: API Layer | Done | REST endpoints for workflows, reports, approvals |
 | Phase 5: Delivery & Scheduling | Done | Slack/Email integration, APScheduler, Supabase Storage |
-| Phase 6: Frontend Dashboard | Pending | Next.js dashboard with ShadCN UI |
+| Phase 6: Frontend Dashboard | Done | Next.js dashboard with ShadCN UI |
 | Phase 7: Documentation | Pending | Architecture docs, demo, final polish |
 
 ---
