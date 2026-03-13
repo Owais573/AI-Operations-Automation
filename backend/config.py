@@ -6,6 +6,11 @@ Loads environment variables from .env file.
 from pydantic_settings import BaseSettings
 from pydantic import Field
 from functools import lru_cache
+import os
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).parent.parent
+ENV_PATH = ROOT_DIR / ".env"
 
 
 class Settings(BaseSettings):
@@ -35,7 +40,7 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO", description="Logging level")
 
     model_config = {
-        "env_file": ".env",
+        "env_file": str(ENV_PATH),
         "env_file_encoding": "utf-8",
         "case_sensitive": False,
         "extra": "ignore",

@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from backend.database.db import get_db
 
@@ -32,12 +32,10 @@ async def get_dashboard_stats():
     }
 
 
-@router.get("/activity", response_model=Dict[str, Any])
+@router.get("/activity", response_model=List[Dict[str, Any]])
 async def get_recent_activity():
     """Retrieve a chronological activity feed for the dashboard UI."""
     db = get_db()
     runs = await db.list_workflow_runs(limit=10)
     
-    return {
-        "recent_runs": runs
-    }
+    return runs
