@@ -136,8 +136,9 @@ async def report_node(state: WorkflowState) -> Dict[str, Any]:
         markdown_content = result.get("report_markdown", "")
         if markdown_content:
             import os
-            os.makedirs("reports", exist_ok=True)
-            pdf_path = f"reports/{state['run_id']}.pdf"
+            import tempfile
+            temp_dir = tempfile.gettempdir()
+            pdf_path = os.path.join(temp_dir, f"{state['run_id']}.pdf")
             try:
                 await agent.generate_pdf(markdown_content, pdf_path)
             except Exception as pdf_err:
@@ -199,6 +200,15 @@ async def deliver_node(state: WorkflowState) -> Dict[str, Any]:
             
         await agent.run(input_data)
         
+        # Clean up local PDF file after delivery
+        pdf_path = input_data.get("pdf_path")
+        if pdf_path and os.path.exists(pdf_path):
+            try:
+                os.remove(pdf_path)
+                logger.info(f"Cleaned up temporary PDF file: {pdf_path}")
+            except OSError as e:
+                logger.warning(f"Failed to clean up temporary PDF file {pdf_path}: {e}")
+                
         # Workflow finishes
         return {
             "status": "completed"
