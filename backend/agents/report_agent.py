@@ -202,18 +202,18 @@ class ReportAgent(BaseAgent):
             <meta charset="utf-8">
             <style>
                 @page {{
-                    margin: 1cm;
+                    margin: 1.5cm;
                 }}
                 body {{
                     font-family: Helvetica, Arial, sans-serif;
-                    font-size: 10pt;
+                    font-size: 12pt;
                     color: #333333;
-                    line-height: 1.4;
+                    line-height: 1.5;
                 }}
-                h1 {{ color: #1a1a2e; border-bottom: 1px solid #16213e; padding-bottom: 4pt; font-size: 16pt; margin-bottom: 10pt; margin-top: 0; }}
-                h2 {{ color: #16213e; font-size: 14pt; margin-top: 16pt; margin-bottom: 6pt; }}
-                h3 {{ color: #0f3460; font-size: 12pt; margin-top: 12pt; margin-bottom: 4pt; }}
-                p {{ margin-bottom: 8pt; margin-top: 0; }}
+                h1 {{ color: #1a1a2e; border-bottom: 2px solid #16213e; padding-bottom: 4pt; font-size: 20pt; margin: 0 0 12pt 0; }}
+                h2 {{ color: #16213e; font-size: 16pt; margin: 16pt 0 8pt 0; }}
+                h3 {{ color: #0f3460; font-size: 14pt; margin: 12pt 0 6pt 0; }}
+                p {{ margin: 0 0 8pt 0; }}
                 table {{
                     width: 100%;
                     border-collapse: collapse;
@@ -221,16 +221,17 @@ class ReportAgent(BaseAgent):
                 }}
                 th, td {{
                     border: 1px solid #cccccc;
-                    padding: 5pt 6pt;
+                    padding: 6pt 8pt;
                     text-align: left;
-                    font-size: 9pt;
+                    font-size: 11pt;
                 }}
                 th {{ background-color: #16213e; color: #ffffff; font-weight: bold; }}
                 tr:nth-child(even) {{ background-color: #f8f9fa; }}
                 strong {{ color: #e94560; font-weight: bold; }}
-                code {{ background-color: #f4f4f4; padding: 2pt 4pt; border-radius: 2pt; font-size: 9pt; }}
-                ul {{ margin-top: 2pt; margin-bottom: 8pt; padding-left: 20pt; }}
-                li {{ margin-bottom: 3pt; }}
+                code {{ background-color: #f4f4f4; padding: 2pt 4pt; border-radius: 2pt; font-size: 11pt; }}
+                ul {{ margin: 6pt 0 12pt 0; padding-left: 24pt; }}
+                li {{ margin: 0 0 4pt 0; }}
+                li p {{ margin: 0; }}
             </style>
         </head>
         <body>
