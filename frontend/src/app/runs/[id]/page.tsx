@@ -165,7 +165,7 @@ export default function RunDetailPage() {
                     <div className="mt-2 flex gap-4 text-xs text-zinc-500">
                       <span>
                         Started:{" "}
-                        {new Date(log.started_at).toLocaleTimeString()}
+                        {log.started_at ? new Date(log.started_at).toLocaleTimeString() : "—"}
                       </span>
                       {log.completed_at && (
                         <span>

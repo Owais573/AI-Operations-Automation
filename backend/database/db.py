@@ -71,6 +71,7 @@ class DatabaseClient:
             "agent_name": agent_name,
             "status": status,
             "input_summary": input_summary,
+            "started_at": datetime.now(timezone.utc).isoformat(),
         }
         result = self.client.table("agent_logs").insert(data).execute()
         return result.data[0]
@@ -95,6 +96,12 @@ class DatabaseClient:
 
     async def create_report(self, run_id: str, title: str, content_markdown: str, **kwargs) -> dict:
         """Create a report record."""
+        # Clean up kwargs to match new schema
+        if "content_pdf_url" in kwargs:
+            del kwargs["content_pdf_url"]
+        if "insights" in kwargs:
+            del kwargs["insights"]
+            
         data = {
             "run_id": run_id,
             "title": title,

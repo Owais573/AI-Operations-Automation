@@ -85,6 +85,7 @@ class BaseAgent(ABC):
                 "output_summary": output_summary,
                 "duration_ms": duration_ms,
                 "tokens_used": self.tokens_used,
+                "completed_at": datetime.now(timezone.utc).isoformat(),
             })
 
             self.logger.info(

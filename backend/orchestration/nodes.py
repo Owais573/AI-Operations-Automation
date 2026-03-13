@@ -17,12 +17,20 @@ async def ingest_node(state: WorkflowState) -> Dict[str, Any]:
     """Node for data ingestion and validation."""
     logger.info(f"Node [ingest] starting for run_id={state['run_id']}")
     try:
-        agent = IngestionAgent(db=get_db())
+        db = get_db()
+        from datetime import datetime, timezone
+        # Set started_at for the whole run
+        await db.update_workflow_run(state["run_id"], {
+            "status": "running",
+            "started_at": datetime.now(timezone.utc).isoformat()
+        })
+        
+        agent = IngestionAgent(db=db)
         input_data = {
             "file_path": state.get("file_path"),
             "expected_columns": state.get("expected_columns", [])
         }
-        result = await agent.run(input_data)
+        result = await agent.execute(state["run_id"], input_data)
         return {
             "raw_data": result,
             "status": "running"
@@ -42,7 +50,7 @@ async def clean_node(state: WorkflowState) -> Dict[str, Any]:
             "records": raw_data.get("records", []),
             "metadata": raw_data.get("metadata", {})
         }
-        result = await agent.run(input_data)
+        result = await agent.execute(state["run_id"], input_data)
         return {"cleaned_data": result}
     except Exception as e:
         logger.error(f"Error in clean_node: {e}")
@@ -62,7 +70,7 @@ async def aggregate_node(state: WorkflowState) -> Dict[str, Any]:
             "report_type": state.get("workflow_type", "sales_report"),
             "time_period": "monthly"
         }
-        result = await agent.run(input_data)
+        result = await agent.execute(state["run_id"], input_data)
         return {"aggregated_data": result}
     except Exception as e:
         logger.error(f"Error in aggregate_node: {e}")
@@ -85,7 +93,7 @@ async def analyze_node(state: WorkflowState) -> Dict[str, Any]:
             "top_performers": agg_data.get("top_performers", {}),
             "cleaning_report": clean_data.get("cleaning_report", {})
         }
-        result = await agent.run(input_data)
+        result = await agent.execute(state["run_id"], input_data)
         
         # After analysis, the workflow pauses for human approval.
         # We record the pending approval checkpoint in the DB.
@@ -129,7 +137,7 @@ async def report_node(state: WorkflowState) -> Dict[str, Any]:
             "region_summary": agg_data.get("region_summary", []),
             "top_performers": agg_data.get("top_performers", {})
         }
-        result = await agent.run(input_data)
+        result = await agent.execute(state["run_id"], input_data)
 
         # Generate PDF from the markdown report
         pdf_path = None
@@ -154,12 +162,19 @@ async def report_node(state: WorkflowState) -> Dict[str, Any]:
         # Save report to database
         db = get_db()
         report_title = result.get("report_title", f"Report for {state['run_id']}")
+        
+        # Get PDF size
+        pdf_size = 0
+        if pdf_path and os.path.exists(pdf_path):
+            pdf_size = os.path.getsize(pdf_path)
+            
         await db.create_report(
             run_id=state["run_id"],
             title=report_title,
             content_markdown=markdown_content,
             pdf_storage_path=storage_result.get("storage_path"),
             pdf_public_url=storage_result.get("public_url"),
+            pdf_size=pdf_size
         )
 
         return {
@@ -183,22 +198,36 @@ async def deliver_node(state: WorkflowState) -> Dict[str, Any]:
         analysis_data = state.get("analysis", {})
         workflow_type = state.get("workflow_type", "report")
         
+        # Determine channels based on state configuration
+        delivery_channels = []
+        if state.get("slack_channel"):
+            delivery_channels.append("slack")
+        if state.get("email_recipients"):
+            delivery_channels.append("email")
+
+        # The pdf_path is generated in the report_node and stored in state["report"]["pdf_path"]
+        pdf_path = report_data.get("pdf_path")
+
         input_data = {
-            "report_markdown": report_data.get("markdown", ""),
+            "report_markdown": report_data.get("report_markdown", ""), 
             "report_title": f"New Workflow Execution: {workflow_type.replace('_', ' ').title()}",
             "insights": analysis_data,
-            "delivery_channels": [], # Populate based on config if needed
+            "delivery_channels": delivery_channels,
             "email_recipients": state.get("email_recipients", []),
-            "pdf_path": report_data.get("pdf_path")
+            "pdf_path": pdf_path,
+            "run_id": state["run_id"],
+            "report": report_data
         }
-        
-        # Determine channels based on state configuration
-        if state.get("slack_channel"):
-            input_data["delivery_channels"].append("slack")
-        if state.get("email_recipients"):
-            input_data["delivery_channels"].append("email")
             
-        await agent.run(input_data)
+        await agent.execute(state["run_id"], input_data)
+        
+        # Mark workflow as completed with timestamp
+        db = get_db()
+        from datetime import datetime, timezone
+        await db.update_workflow_run(state["run_id"], {
+            "status": "completed",
+            "completed_at": datetime.now(timezone.utc).isoformat()
+        })
         
         # Clean up local PDF file after delivery
         pdf_path = input_data.get("pdf_path")
