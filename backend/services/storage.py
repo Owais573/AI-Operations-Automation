@@ -79,3 +79,23 @@ async def get_download_url(storage_path: str, expires_in: int = 3600) -> str | N
     except Exception as e:
         logger.error(f"Failed to generate signed URL: {e}")
         return None
+
+
+async def delete_file(storage_path: str) -> bool:
+    """
+    Remove a file from Supabase Storage.
+
+    Args:
+        storage_path: Path in the reports bucket.
+
+    Returns:
+        True if successful or file already gone, False otherwise.
+    """
+    try:
+        db = get_db()
+        db.client.storage.from_(BUCKET_NAME).remove([storage_path])
+        logger.info(f"Deleted file from storage: {storage_path}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to delete file from storage {storage_path}: {e}")
+        return False

@@ -109,3 +109,20 @@ async def get_workflow_run(run_id: str):
         "run": run,
         "logs": logs
     }
+
+
+@router.delete("/runs/{run_id}", response_model=Dict[str, Any])
+async def delete_workflow_run(run_id: str):
+    """Delete a workflow run and all its associated data."""
+    db = get_db()
+    
+    # Check if exists first
+    run = await db.get_workflow_run(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+        
+    success = await db.delete_workflow_run(run_id)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to delete run")
+        
+    return {"message": "Workflow run and all associated data deleted successfully"}

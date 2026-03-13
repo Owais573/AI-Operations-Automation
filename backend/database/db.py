@@ -56,6 +56,36 @@ class DatabaseClient:
         )
         return result.data
 
+
+    async def delete_workflow_run(self, run_id: str) -> bool:
+        """
+        Delete a workflow run and trigger associated storage cleanup.
+        Returns True if successful.
+        """
+        try:
+            # 1. Get associated report to find storage path
+            report_result = (
+                self.client.table("reports")
+                .select("pdf_storage_path")
+                .eq("run_id", run_id)
+                .maybe_single()
+                .execute()
+            )
+            
+            if report_result.data and report_result.data.get("pdf_storage_path"):
+                from backend.services.storage import delete_file
+                storage_path = report_result.data["pdf_storage_path"]
+                await delete_file(storage_path)
+
+            # 2. Delete the run (DB cascade handles logs, report record, and approvals)
+            self.client.table("workflow_runs").delete().eq("id", run_id).execute()
+            
+            logger.info(f"Deleted workflow run and associated data: {run_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error deleting workflow run {run_id}: {e}")
+            return False
+
     # ─── Agent Logs ──────────────────────────────────────────
 
     async def create_agent_log(
