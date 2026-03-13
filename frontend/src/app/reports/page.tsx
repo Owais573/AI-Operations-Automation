@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { RefreshCw, FileText, Download, Eye, FileWarning } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<Report[]>([]);
@@ -90,7 +91,7 @@ export default function ReportsPage() {
                     <div className="prose prose-invert prose-sm max-w-none mt-4 border-t border-white/10 pt-4">
                       {selectedReport?.content_markdown ? (
                         <div className="text-zinc-300">
-                          <ReactMarkdown>
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
                             {selectedReport.content_markdown}
                           </ReactMarkdown>
                         </div>

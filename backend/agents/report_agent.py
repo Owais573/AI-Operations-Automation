@@ -186,7 +186,7 @@ class ReportAgent(BaseAgent):
             Path to the generated PDF file
         """
         import markdown
-        from weasyprint import HTML
+        from xhtml2pdf import pisa
 
         # Convert Markdown to HTML
         html_body = markdown.markdown(
@@ -239,7 +239,12 @@ class ReportAgent(BaseAgent):
         import os
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-        HTML(string=full_html).write_pdf(output_path)
+        with open(output_path, "w+b") as result_file:
+            pisa_status = pisa.CreatePDF(full_html, dest=result_file)
+
+        if pisa_status.err:
+            raise Exception("PDF generation failed with xhtml2pdf")
+
         self.logger.info(f"PDF generated: {output_path}")
 
         return output_path
