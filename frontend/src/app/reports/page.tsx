@@ -11,7 +11,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { RefreshCw, FileText, Download, Eye } from "lucide-react";
+import { RefreshCw, FileText, Download, Eye, FileWarning } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<Report[]>([]);
@@ -86,15 +87,21 @@ export default function ReportsPage() {
                         {selectedReport?.title || report.title}
                       </DialogTitle>
                     </DialogHeader>
-                    <div className="prose prose-invert prose-sm max-w-none mt-4">
-                      <pre className="whitespace-pre-wrap text-xs text-zinc-300">
-                        {report.content_markdown || "No content available."}
-                      </pre>
+                    <div className="prose prose-invert prose-sm max-w-none mt-4 border-t border-white/10 pt-4">
+                      {selectedReport?.content_markdown ? (
+                        <div className="text-zinc-300">
+                          <ReactMarkdown>
+                            {selectedReport.content_markdown}
+                          </ReactMarkdown>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-zinc-500 italic">No content available.</p>
+                      )}
                     </div>
                   </DialogContent>
                 </Dialog>
 
-                {report.pdf_public_url && (
+                {report.pdf_public_url ? (
                   <a
                     href={report.pdf_public_url}
                     target="_blank"
@@ -103,12 +110,22 @@ export default function ReportsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-white/10"
+                      className="border-white/10 hover:bg-white/5"
                     >
                       <Download className="mr-2 h-4 w-4" />
                       PDF
                     </Button>
                   </a>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-white/10 text-zinc-500 cursor-not-allowed"
+                    title="PDF generation failed for this report (Markdown only)"
+                  >
+                    <FileWarning className="mr-2 h-4 w-4" />
+                    No PDF
+                  </Button>
                 )}
               </CardContent>
             </Card>

@@ -84,7 +84,10 @@ class ReportAgent(BaseAgent):
 
         date_start = metrics.get("date_range_start", "")
         date_end = metrics.get("date_range_end", "")
-        report_title = f"Sales Performance Report ({date_start} to {date_end})"
+        if date_start and date_end:
+            report_title = f"Sales Performance Report ({date_start} to {date_end})"
+        else:
+            report_title = "Sales Performance Report"
 
         report_metadata = {
             "generated_at": now.isoformat(),
