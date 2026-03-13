@@ -12,14 +12,42 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  RefreshCw,
+  BarChart3,
+  Box,
+  TrendingUp,
+  ChevronDown,
   Play,
   CheckCircle2,
   XCircle,
   Clock,
   FileText,
   ShieldCheck,
-  RefreshCw,
 } from "lucide-react";
+
+const REPORT_CONFIGS: Record<string, { label: string; type: string; path: string; icon: any; color: string }> = {
+  sales: {
+    label: "Sales Report",
+    type: "sales_report",
+    path: "f:/Antigravity/AI Operations Automation/data/mock_sales_data.csv",
+    icon: TrendingUp,
+    color: "text-blue-400",
+  },
+  inventory: {
+    label: "Inventory Report",
+    type: "inventory_report",
+    path: "f:/Antigravity/AI Operations Automation/data/mock_inventory_data.csv",
+    icon: Box,
+    color: "text-emerald-400",
+  },
+  finance: {
+    label: "Financial Report",
+    type: "financial_report",
+    path: "f:/Antigravity/AI Operations Automation/data/mock_financial_data.csv",
+    icon: BarChart3,
+    color: "text-amber-400",
+  },
+};
 
 const statusColor: Record<string, string> = {
   completed: "bg-emerald-500/20 text-emerald-400",
@@ -31,9 +59,10 @@ const statusColor: Record<string, string> = {
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [activity, setActivity] = useState<ActivityItem[]>([]);
+   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [triggering, setTriggering] = useState(false);
+  const [selectedReport, setSelectedReport] = useState("sales");
 
   async function loadData() {
     setLoading(true);
@@ -57,12 +86,13 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
-  async function handleQuickRun() {
+   async function handleQuickRun() {
     setTriggering(true);
+    const config = REPORT_CONFIGS[selectedReport];
     try {
       await triggerWorkflow({
-        workflow_type: "sales_report",
-        file_path: "f:/Antigravity/AI Operations Automation/data/mock_sales_data.csv",
+        workflow_type: config.type,
+        file_path: config.path,
       });
       setTimeout(loadData, 2000);
     } catch (err) {
@@ -90,18 +120,35 @@ export default function DashboardPage() {
             Real-time overview of your AI automation pipeline
           </p>
         </div>
-        <Button
-          onClick={handleQuickRun}
-          disabled={triggering}
-          className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500"
-        >
-          {triggering ? (
-            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Play className="mr-2 h-4 w-4" />
-          )}
-          Quick Run
-        </Button>
+        <div className="flex items-center gap-3">
+          <div className="relative group">
+            <select
+              value={selectedReport}
+              onChange={(e) => setSelectedReport(e.target.value)}
+              className="appearance-none bg-zinc-900 border border-white/10 text-zinc-300 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-44 px-4 py-2 pr-10 hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              {Object.entries(REPORT_CONFIGS).map(([key, config]) => (
+                <option key={key} value={key}>
+                  {config.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 pointer-events-none" />
+          </div>
+
+          <Button
+            onClick={handleQuickRun}
+            disabled={triggering}
+            className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 shadow-lg shadow-violet-500/20"
+          >
+            {triggering ? (
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Play className="mr-2 h-4 w-4" />
+            )}
+            Run Now
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
