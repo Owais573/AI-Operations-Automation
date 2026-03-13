@@ -7,6 +7,14 @@ import { fetchWorkflowRun, deleteWorkflowRun, type WorkflowRunDetail } from "@/l
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, RefreshCw, CheckCircle2, XCircle, Clock, Trash2 } from "lucide-react";
 
@@ -34,6 +42,7 @@ export default function RunDetailPage() {
   const [data, setData] = useState<WorkflowRunDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   async function loadRun() {
     setLoading(true);
@@ -52,8 +61,6 @@ export default function RunDetailPage() {
   }, [runId]);
 
   async function handleDelete() {
-    if (!confirm("Are you sure you want to delete this workflow run? This action cannot be undone and will delete all associated logs and reports.")) return;
-    
     setDeleting(true);
     try {
       await deleteWorkflowRun(runId);
@@ -102,7 +109,7 @@ export default function RunDetailPage() {
           <Button 
             variant="destructive" 
             size="sm" 
-            onClick={handleDelete} 
+            onClick={() => setShowDeleteDialog(true)} 
             disabled={deleting || loading}
             className="bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/20"
           >
@@ -215,6 +222,38 @@ export default function RunDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="border-white/10 bg-zinc-950 text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Workflow Run</DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              Are you sure you want to delete this workflow run? This action cannot be undone and will delete all associated logs and reports.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              className="border-white/10"
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deleting}
+              className="bg-red-500 hover:bg-red-600 text-white"
+              onClick={handleDelete}
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
