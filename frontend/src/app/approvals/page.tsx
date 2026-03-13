@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   fetchPendingApprovals,
   approveWorkflow,
   rejectWorkflow,
+  fetchWorkflowRun,
   type Approval,
 } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,7 +32,9 @@ export default function ApprovalsPage() {
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [generatingReport, setGeneratingReport] = useState(false);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const router = useRouter();
 
   async function loadApprovals() {
     setLoading(true);
@@ -52,13 +56,31 @@ export default function ApprovalsPage() {
 
   async function handleApprove(approvalId: string) {
     setProcessingId(approvalId);
+    setGeneratingReport(true);
     try {
-      await approveWorkflow(approvalId, notes[approvalId] || "");
-      setApprovals((prev) => prev.filter((a) => a.id !== approvalId));
+      const { run_id } = await approveWorkflow(approvalId, notes[approvalId] || "");
+      
+      // Poll for completion
+      while (true) {
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        const runDetail = await fetchWorkflowRun(run_id);
+        const status = runDetail.run?.status;
+        if (status === "completed") {
+          router.push("/reports");
+          return;
+        } else if (status === "failed") {
+          alert("Workflow generation failed. Please check the workflow runs page.");
+          setApprovals((prev) => prev.filter((a) => a.id !== approvalId));
+          break;
+        }
+      }
     } catch (err) {
       console.error("Error approving:", err);
+      alert("An error occurred during approval.");
+      setApprovals((prev) => prev.filter((a) => a.id !== approvalId));
     } finally {
       setProcessingId(null);
+      setGeneratingReport(false);
     }
   }
 
@@ -196,15 +218,17 @@ export default function ApprovalsPage() {
                   <div className="flex gap-3">
                     <Button
                       onClick={() => handleApprove(approval.id)}
-                      disabled={processingId === approval.id}
+                      disabled={processingId === approval.id || generatingReport}
                       className="bg-emerald-600 hover:bg-emerald-500"
                     >
-                      {processingId === approval.id ? (
+                      {processingId === approval.id && generatingReport ? (
                         <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
                         <CheckCircle2 className="mr-2 h-4 w-4" />
                       )}
-                      Approve & Generate Report
+                      {processingId === approval.id && generatingReport
+                        ? "Generating Report..."
+                        : "Approve & Generate Report"}
                     </Button>
                     <Button
                       onClick={() => handleReject(approval.id)}

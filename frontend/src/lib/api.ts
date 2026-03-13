@@ -52,7 +52,7 @@ export function fetchPendingApprovals() {
 }
 
 export function approveWorkflow(approvalId: string, notes = "") {
-  return apiFetch<{ message: string }>(`/api/approvals/${approvalId}/approve`, {
+  return apiFetch<{ message: string; run_id: string }>(`/api/approvals/${approvalId}/approve`, {
     method: "POST",
     body: JSON.stringify({ reviewer_notes: notes }),
   });
