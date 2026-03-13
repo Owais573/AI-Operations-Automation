@@ -18,7 +18,7 @@ An AI-powered operational automation platform that converts manual ERP reporting
 | Frontend | Next.js + Tailwind CSS + ShadCN UI + Recharts |
 | Email | Python smtplib (free, built-in) |
 | Scheduling | APScheduler |
-| PDF Generation | WeasyPrint |
+| PDF Generation | xhtml2pdf |
 
 ---
 
@@ -125,7 +125,7 @@ ai-operations-automation/
 |  |                              +------------------v-------+  |
 |  |                              |  Delivery Agent          |  |
 |  |                              +--------------------------+  |
-|  +-----------------------------------------------------------+
++-----------------------------------------------------------+
 |                                                               |
 |  Scheduling (APScheduler) | State Store | Error Handler       |
 +-----------------------------+--------------------------------+
@@ -169,7 +169,7 @@ CSV / Mock ERP Data
 | **Cleaning** | LLM-powered | Sends data summary to GPT-4o-mini for a structured cleaning plan, then executes: deduplication, null filling (median/mode), type conversion, outlier flagging (3x IQR), text standardization |
 | **Aggregation** | Data (Pandas) | Multi-dimensional grouping (product, region, time), overall KPIs (revenue, margin, AOV), month-over-month growth, top performers by revenue, cross-dimensional analysis |
 | **Analysis** | LLM-powered | Chain-of-thought business insights: executive summary, key findings with impact levels, trend analysis + growth assessment, anomaly detection, prioritized recommendations, confidence scoring |
-| **Report** | LLM + WeasyPrint | Generates professional Markdown reports via GPT-4o-mini, includes tables and structured sections, converts to styled PDF with professional CSS |
+| **Report** | LLM + xhtml2pdf | Generates professional Markdown reports via GPT-4o-mini, includes tables and structured sections, converts to styled PDF with professional CSS |
 | **Delivery** | Integration | Slack delivery via Block Kit formatted webhooks, Email via smtplib (SMTP/TLS) with HTML body + optional PDF attachment, graceful handling of unconfigured channels |
 
 ### Base Agent Features
@@ -227,7 +227,7 @@ All mock data uses a fixed seed (`Faker.seed(42)`) for reproducibility.
 | Phase 4: API Layer | Done | REST endpoints for workflows, reports, approvals |
 | Phase 5: Delivery & Scheduling | Done | Slack/Email integration, APScheduler, Supabase Storage |
 | Phase 6: Frontend Dashboard | Done | Next.js dashboard with ShadCN UI |
-| Phase 7: Documentation | Pending | Architecture docs, demo, final polish |
+| Phase 7: Documentation | Done | Architecture docs, demo, final polish |
 
 ---
 
