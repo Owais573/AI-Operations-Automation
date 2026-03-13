@@ -37,6 +37,12 @@ export function triggerWorkflow(body: TriggerWorkflowRequest) {
   });
 }
 
+export function deleteWorkflowRun(runId: string) {
+  return apiFetch<{ message: string }>(`/api/workflows/runs/${runId}`, {
+    method: "DELETE",
+  });
+}
+
 // ── Reports ──
 export function fetchReports() {
   return apiFetch<Report[]>("/api/reports");

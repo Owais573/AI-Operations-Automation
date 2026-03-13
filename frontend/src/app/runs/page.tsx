@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   fetchWorkflowRuns,
+  deleteWorkflowRun,
   type WorkflowRun,
 } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, ExternalLink } from "lucide-react";
+import { RefreshCw, ExternalLink, Trash2 } from "lucide-react";
 
 const statusColor: Record<string, string> = {
   completed: "bg-emerald-500/20 text-emerald-400",
@@ -31,6 +32,7 @@ export default function RunsPage() {
   const [runs, setRuns] = useState<WorkflowRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   async function loadRuns() {
     setLoading(true);
@@ -41,6 +43,20 @@ export default function RunsPage() {
       console.error("Error loading runs:", err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDelete(runId: string) {
+    if (!confirm("Are you sure you want to delete this workflow run?")) return;
+    setDeletingId(runId);
+    try {
+      await deleteWorkflowRun(runId);
+      await loadRuns();
+    } catch (err) {
+      console.error("Error deleting run:", err);
+      alert("Failed to delete workflow run.");
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -138,7 +154,16 @@ export default function RunsPage() {
                     <TableCell className="max-w-[200px] truncate text-red-400 text-xs">
                       {run.error_message || "—"}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right space-x-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleDelete(run.id)}
+                        disabled={deletingId === run.id}
+                        className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                      >
+                        <Trash2 className={`h-4 w-4 ${deletingId === run.id ? "animate-pulse" : ""}`} />
+                      </Button>
                       <Link href={`/runs/${run.id}`}>
                         <Button variant="ghost" size="sm">
                           <ExternalLink className="h-4 w-4" />

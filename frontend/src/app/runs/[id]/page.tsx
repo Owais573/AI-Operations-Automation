@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { fetchWorkflowRun, type WorkflowRunDetail } from "@/lib/api";
+import { fetchWorkflowRun, deleteWorkflowRun, type WorkflowRunDetail } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, RefreshCw, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { ArrowLeft, RefreshCw, CheckCircle2, XCircle, Clock, Trash2 } from "lucide-react";
 
 const statusColor: Record<string, string> = {
   completed: "bg-emerald-500/20 text-emerald-400",
@@ -29,9 +29,11 @@ const statusIcon: Record<string, React.ReactNode> = {
 
 export default function RunDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const runId = params.id as string;
   const [data, setData] = useState<WorkflowRunDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   async function loadRun() {
     setLoading(true);
@@ -48,6 +50,20 @@ export default function RunDetailPage() {
   useEffect(() => {
     loadRun();
   }, [runId]);
+
+  async function handleDelete() {
+    if (!confirm("Are you sure you want to delete this workflow run? This action cannot be undone and will delete all associated logs and reports.")) return;
+    
+    setDeleting(true);
+    try {
+      await deleteWorkflowRun(runId);
+      router.push("/runs");
+    } catch (err) {
+      console.error("Error deleting run:", err);
+      alert("Failed to delete workflow run.");
+      setDeleting(false);
+    }
+  }
 
   if (loading || !data) {
     return (
@@ -81,6 +97,19 @@ export default function RunDetailPage() {
         >
           {run.status}
         </Badge>
+        
+        <div className="ml-auto">
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            onClick={handleDelete} 
+            disabled={deleting || loading}
+            className="bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/20"
+          >
+            <Trash2 className={`mr-2 h-4 w-4 ${deleting ? "animate-pulse" : ""}`} />
+            {deleting ? "Deleting..." : "Delete Run"}
+          </Button>
+        </div>
       </div>
 
       {/* Run Info */}
