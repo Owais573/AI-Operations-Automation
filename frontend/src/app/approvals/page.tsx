@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   fetchPendingApprovals,
@@ -35,16 +35,23 @@ export default function ApprovalsPage() {
   const [generatingReport, setGeneratingReport] = useState(false);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const router = useRouter();
+  const processingIdRef = useRef<string | null>(null);
 
   async function loadApprovals() {
+    if (processingIdRef.current) return;
+    
     setLoading(true);
     try {
       const data = await fetchPendingApprovals();
-      setApprovals(data);
+      if (!processingIdRef.current) {
+        setApprovals(data);
+      }
     } catch (err) {
       console.error("Error loading approvals:", err);
     } finally {
-      setLoading(false);
+      if (!processingIdRef.current) {
+        setLoading(false);
+      }
     }
   }
 
@@ -56,6 +63,7 @@ export default function ApprovalsPage() {
 
   async function handleApprove(approvalId: string) {
     setProcessingId(approvalId);
+    processingIdRef.current = approvalId;
     setGeneratingReport(true);
     try {
       const { run_id } = await approveWorkflow(approvalId, notes[approvalId] || "");
@@ -80,12 +88,14 @@ export default function ApprovalsPage() {
       setApprovals((prev) => prev.filter((a) => a.id !== approvalId));
     } finally {
       setProcessingId(null);
+      processingIdRef.current = null;
       setGeneratingReport(false);
     }
   }
 
   async function handleReject(approvalId: string) {
     setProcessingId(approvalId);
+    processingIdRef.current = approvalId;
     try {
       await rejectWorkflow(approvalId, notes[approvalId] || "");
       setApprovals((prev) => prev.filter((a) => a.id !== approvalId));
@@ -93,6 +103,7 @@ export default function ApprovalsPage() {
       console.error("Error rejecting:", err);
     } finally {
       setProcessingId(null);
+      processingIdRef.current = null;
     }
   }
 

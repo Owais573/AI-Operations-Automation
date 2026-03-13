@@ -201,33 +201,36 @@ class ReportAgent(BaseAgent):
         <head>
             <meta charset="utf-8">
             <style>
-                body {{
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    max-width: 800px;
-                    margin: 40px auto;
-                    padding: 20px;
-                    color: #333;
-                    line-height: 1.6;
+                @page {{
+                    margin: 1cm;
                 }}
-                h1 {{ color: #1a1a2e; border-bottom: 2px solid #16213e; padding-bottom: 10px; }}
-                h2 {{ color: #16213e; margin-top: 30px; }}
-                h3 {{ color: #0f3460; }}
+                body {{
+                    font-family: Helvetica, Arial, sans-serif;
+                    font-size: 10pt;
+                    color: #333333;
+                    line-height: 1.4;
+                }}
+                h1 {{ color: #1a1a2e; border-bottom: 1px solid #16213e; padding-bottom: 4pt; font-size: 16pt; margin-bottom: 10pt; margin-top: 0; }}
+                h2 {{ color: #16213e; font-size: 14pt; margin-top: 16pt; margin-bottom: 6pt; }}
+                h3 {{ color: #0f3460; font-size: 12pt; margin-top: 12pt; margin-bottom: 4pt; }}
+                p {{ margin-bottom: 8pt; margin-top: 0; }}
                 table {{
                     width: 100%;
                     border-collapse: collapse;
-                    margin: 20px 0;
+                    margin: 12pt 0;
                 }}
                 th, td {{
-                    border: 1px solid #ddd;
-                    padding: 8px 12px;
+                    border: 1px solid #cccccc;
+                    padding: 5pt 6pt;
                     text-align: left;
+                    font-size: 9pt;
                 }}
-                th {{ background-color: #16213e; color: white; }}
+                th {{ background-color: #16213e; color: #ffffff; font-weight: bold; }}
                 tr:nth-child(even) {{ background-color: #f8f9fa; }}
-                strong {{ color: #e94560; }}
-                code {{ background: #f4f4f4; padding: 2px 6px; border-radius: 3px; }}
-                ul {{ padding-left: 20px; }}
-                li {{ margin-bottom: 5px; }}
+                strong {{ color: #e94560; font-weight: bold; }}
+                code {{ background-color: #f4f4f4; padding: 2pt 4pt; border-radius: 2pt; font-size: 9pt; }}
+                ul {{ margin-top: 2pt; margin-bottom: 8pt; padding-left: 20pt; }}
+                li {{ margin-bottom: 3pt; }}
             </style>
         </head>
         <body>
