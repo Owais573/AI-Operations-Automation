@@ -80,7 +80,7 @@ export default function ReportsPage() {
                     <Eye className="mr-2 h-4 w-4" />
                     Preview
                   </DialogTrigger>
-                  <DialogContent className="max-h-[80vh] max-w-3xl overflow-y-auto bg-zinc-950 border-white/10">
+                  <DialogContent className="sm:max-w-3xl md:max-w-4xl max-h-[80vh] w-[90vw] overflow-y-auto bg-zinc-950 border-white/10 p-6">
                     <DialogHeader>
                       <DialogTitle className="text-white">
                         {selectedReport?.title || report.title}

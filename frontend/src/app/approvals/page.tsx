@@ -102,10 +102,10 @@ export default function ApprovalsPage() {
       ) : (
         <div className="space-y-4">
           {approvals.map((approval) => {
-            const snapshot = approval.data_snapshot || {};
-            const summary =
-              (snapshot as Record<string, string>).executive_summary || "No summary available";
-            const findings = (snapshot as Record<string, unknown[]>).key_findings || [];
+            const snapshot = (approval.data_snapshot as any) || {};
+            const insights = snapshot.insights || snapshot;
+            const summary = insights.executive_summary || "No summary available";
+            const findings = insights.key_findings || [];
 
             return (
               <Card
@@ -167,7 +167,7 @@ export default function ApprovalsPage() {
                       <Eye className="mr-2 h-4 w-4" />
                       View Full Analysis
                     </DialogTrigger>
-                    <DialogContent className="max-h-[80vh] max-w-3xl overflow-y-auto bg-zinc-950 border-white/10">
+                    <DialogContent className="sm:max-w-3xl md:max-w-4xl max-h-[80vh] w-[90vw] overflow-y-auto bg-zinc-950 border-white/10 p-6">
                       <DialogHeader>
                         <DialogTitle className="text-white">
                           Full Analysis Data
