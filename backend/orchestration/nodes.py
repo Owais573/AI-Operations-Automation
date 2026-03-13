@@ -66,8 +66,6 @@ async def aggregate_node(state: WorkflowState) -> Dict[str, Any]:
         cleaned_data = state.get("cleaned_data", {})
         input_data = {
             "records": cleaned_data.get("records", []),
-            # Group by logic can be matched to workflow_type or default.
-            "group_by": ["product", "region"],
             "report_type": state.get("workflow_type", "sales_report"),
             "time_period": "monthly"
         }
@@ -87,10 +85,13 @@ async def analyze_node(state: WorkflowState) -> Dict[str, Any]:
         clean_data = state.get("cleaned_data", {})
         
         input_data = {
-            "overall_metrics": agg_data.get("overall_kpis", {}),
+            "report_type": state.get("workflow_type", "sales_report"),
+            "overall_metrics": agg_data.get("overall_metrics", {}),
             "time_series": agg_data.get("time_series", []),
             "product_summary": agg_data.get("product_summary", []),
             "region_summary": agg_data.get("region_summary", []),
+            "department_summary": agg_data.get("region_summary", []), # Inventory Warehouses or Financial Depts mapped here
+            "category_summary": agg_data.get("product_summary", []), # Category/Inventory Prod names mapped here
             "top_performers": agg_data.get("top_performers", {}),
             "cleaning_report": clean_data.get("cleaning_report", {})
         }
@@ -132,7 +133,7 @@ async def report_node(state: WorkflowState) -> Dict[str, Any]:
             "report_title": f"Automated {workflow_type.replace('_', ' ').title().strip()}",
             "report_type": workflow_type,
             "insights": analysis,
-            "overall_metrics": agg_data.get("overall_kpis", {}),
+            "overall_metrics": agg_data.get("overall_metrics", {}),
             "time_series": agg_data.get("time_series", []),
             "product_summary": agg_data.get("product_summary", []),
             "region_summary": agg_data.get("region_summary", []),

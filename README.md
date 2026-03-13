@@ -165,12 +165,12 @@ CSV / Mock ERP Data
 
 | Agent | Type | Key Capabilities |
 |-------|------|-----------------|
-| **Ingestion** | Data | Load CSV/Excel files, validate schema against expected columns, extract metadata (row count, date range, column types), detect duplicates and missing values |
-| **Cleaning** | LLM-powered | Sends data summary to GPT-4o-mini for a structured cleaning plan, then executes: deduplication, null filling (median/mode), type conversion, outlier flagging (3x IQR), text standardization |
-| **Aggregation** | Data (Pandas) | Multi-dimensional grouping (product, region, time), overall KPIs (revenue, margin, AOV), month-over-month growth, top performers by revenue, cross-dimensional analysis |
-| **Analysis** | LLM-powered | Chain-of-thought business insights: executive summary, key findings with impact levels, trend analysis + growth assessment, anomaly detection, prioritized recommendations, confidence scoring |
-| **Report** | LLM + xhtml2pdf | Generates professional Markdown reports via GPT-4o-mini, includes tables and structured sections, converts to styled PDF with professional CSS |
-| **Delivery** | Integration | Slack delivery via Block Kit formatted webhooks, Email via smtplib (SMTP/TLS) with HTML body + optional PDF attachment, graceful handling of unconfigured channels |
+| **Ingestion** | Data | Load CSV/Excel files, dynamic schema detection, extract metadata (row count, date range), detect duplicates and missing values |
+| **Cleaning** | LLM-powered | Generates a structured cleaning plan via GPT-4o-mini: deduplication, null filling, type conversion, outlier flagging, text standardization |
+| **Aggregation** | Data (Pandas) | **Multi-Report Support**: Dynamic grouping by dimensions (product, region, department) and measures (revenue, stock_level, amount) based on report type |
+| **Analysis** | LLM-powered | **Generalized Insights**: Chain-of-thought analysis for Sales, Inventory, and Finance domains. Trend detection, anomaly alerting, and prioritized recommendations |
+| **Report** | LLM + xhtml2pdf | Generates contextual Markdown reports with dynamic titles and date ranges, converted to high-quality PDF with professional CSS |
+| **Delivery** | Integration | Slack Block Kit notifications, SMTP Email with HTML body + PDF attachment, multi-channel support |
 
 ### Base Agent Features
 
@@ -208,6 +208,7 @@ All mock data uses a fixed seed (`Faker.seed(42)`) for reproducibility.
 
 ## Key Features
 
+- **Multi-Report Support** -- Dynamic pipelines for Sales, Inventory, and Financial datasets
 - **Truly Agentic** -- Agents use LLM reasoning to make decisions, not hardcoded logic
 - **Human-in-the-Loop** -- Workflow pauses for human approval before report generation
 - **Full Observability** -- Every agent execution logged with duration, tokens, and I/O summaries
@@ -227,7 +228,7 @@ All mock data uses a fixed seed (`Faker.seed(42)`) for reproducibility.
 | Phase 4: API Layer | Done | REST endpoints for workflows, reports, approvals |
 | Phase 5: Delivery & Scheduling | Done | Slack/Email integration, APScheduler, Supabase Storage |
 | Phase 6: Frontend Dashboard | Done | Next.js dashboard with ShadCN UI |
-| Phase 7: Documentation | Done | Architecture docs, demo, final polish |
+| Phase 7: Polish & Documentation | Done | Multi-report pipeline support, dynamic UI titles, final documentation |
 
 ---
 

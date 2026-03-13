@@ -18,34 +18,53 @@ from backend.database.db import DatabaseClient
 class AggregationAgent(BaseAgent):
     """
     Agent that aggregates cleaned data into business metrics.
-
-    Input:
-        records: list[dict] -- Cleaned data records
-        group_by: list[str] (optional) -- Dimensions to group by (default: product, region)
-        time_period: str (optional) -- Time grouping: 'daily', 'weekly', 'monthly' (default: monthly)
-
-    Output:
-        product_summary: list[dict] -- Per-product metrics
-        region_summary: list[dict] -- Per-region metrics
-        time_series: list[dict] -- Time-based metrics
-        overall_metrics: dict -- High-level KPIs
-        top_performers: dict -- Best-performing products and reps
+    Supports multiple report types with dynamic dimension/measure mapping.
     """
+
+    # ── Report Configurations ──
+    REPORT_CONFIGS = {
+        "sales_report": {
+            "dimensions": ["product", "region"],
+            "measures": ["revenue", "cost", "units_sold"],
+            "kpis": ["total_revenue", "total_cost", "total_units_sold"],
+            "primary_dim": "product",
+            "secondary_dim": "region",
+        },
+        "inventory_report": {
+            "dimensions": ["product_name", "warehouse"],
+            "measures": ["stock_level", "reorder_point"],
+            "kpis": ["avg_stock_level", "low_stock_items"],
+            "primary_dim": "product_name",
+            "secondary_dim": "warehouse",
+        },
+        "financial_report": {
+            "dimensions": ["category", "department"],
+            "measures": ["amount"],
+            "kpis": ["total_amount", "expense_ratio"],
+            "primary_dim": "category",
+            "secondary_dim": "department",
+        }
+    }
 
     def __init__(self, db: DatabaseClient):
         super().__init__(name="aggregation_agent", db=db)
 
     async def run(self, input_data: dict) -> dict:
         records: list[dict] = input_data["records"]
-        group_by: list[str] = input_data.get("group_by", ["product", "region"])
+        report_type: str = input_data.get("report_type", "sales_report")
         time_period: str = input_data.get("time_period", "monthly")
 
+        # Fallback for unknown report types
+        config = self.REPORT_CONFIGS.get(report_type, self.REPORT_CONFIGS["sales_report"])
+        
         df = pd.DataFrame(records)
-        self.logger.info(f"Aggregating {len(df)} rows | group_by={group_by} | period={time_period}")
+        self.logger.info(f"Aggregating {len(df)} rows | type={report_type} | period={time_period}")
 
-        # ── 0. Ensure numeric types ──
-        numeric_cols = ["units_sold", "unit_price", "revenue", "cost"]
-        for col in numeric_cols:
+        if df.empty:
+            return self._empty_result()
+
+        # ── 0. Ensure numeric types for measures ──
+        for col in config["measures"]:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors="coerce")
 
@@ -53,192 +72,176 @@ class AggregationAgent(BaseAgent):
             df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
         # ── 1. Overall KPIs ──
-        overall_metrics = self._compute_overall_metrics(df)
+        overall_metrics = self._compute_overall_metrics(df, report_type, config)
 
-        # ── 2. Product summary ──
-        product_summary = self._aggregate_by_dimension(df, "product")
+        # ── 2. Primary dimension summary ──
+        product_summary = self._aggregate_by_dimension(df, config["primary_dim"], config)
 
-        # ── 3. Region summary ──
-        region_summary = self._aggregate_by_dimension(df, "region")
+        # ── 3. Secondary dimension summary ──
+        region_summary = self._aggregate_by_dimension(df, config["secondary_dim"], config)
 
         # ── 4. Time series ──
-        time_series = self._aggregate_by_time(df, time_period)
+        time_series = self._aggregate_by_time(df, time_period, config)
 
         # ── 5. Top performers ──
-        top_performers = self._get_top_performers(df)
+        top_performers = self._get_top_performers(df, config)
 
-        # ── 6. Cross-dimensional (product x region) ──
-        cross_summary = self._aggregate_cross_dimensions(df, "product", "region")
+        # ── 6. Cross-dimensional summary ──
+        cross_summary = self._aggregate_cross_dimensions(df, config["primary_dim"], config["secondary_dim"], config)
 
         self.logger.info(
-            f"Aggregation complete | products={len(product_summary)} | "
-            f"regions={len(region_summary)} | time_periods={len(time_series)}"
+            f"Aggregation complete | {config['primary_dim']}s={len(product_summary)} | "
+            f"{config['secondary_dim']}s={len(region_summary)} | time_periods={len(time_series)}"
         )
 
         return {
+            "report_type": report_type,
             "overall_metrics": overall_metrics,
-            "product_summary": product_summary,
+            "product_summary": product_summary,  # Keeping name for compatibility or aliasing internally
             "region_summary": region_summary,
             "time_series": time_series,
             "top_performers": top_performers,
             "cross_summary": cross_summary,
         }
 
-    def _compute_overall_metrics(self, df: pd.DataFrame) -> dict:
-        """Calculate high-level KPIs."""
-        total_revenue = float(df["revenue"].sum()) if "revenue" in df.columns else 0
-        total_cost = float(df["cost"].sum()) if "cost" in df.columns else 0
-        total_units = float(df["units_sold"].sum()) if "units_sold" in df.columns else 0
-        gross_profit = total_revenue - total_cost
-        gross_margin = (gross_profit / total_revenue * 100) if total_revenue > 0 else 0
-
-        metrics = {
-            "total_revenue": round(total_revenue, 2),
-            "total_cost": round(total_cost, 2),
-            "gross_profit": round(gross_profit, 2),
-            "gross_margin_pct": round(gross_margin, 2),
-            "total_units_sold": round(total_units, 0),
-            "total_transactions": len(df),
-            "avg_order_value": round(total_revenue / len(df), 2) if len(df) > 0 else 0,
-            "unique_products": int(df["product"].nunique()) if "product" in df.columns else 0,
-            "unique_regions": int(df["region"].nunique()) if "region" in df.columns else 0,
+    def _empty_result(self) -> dict:
+        return {
+            "overall_metrics": {},
+            "product_summary": [],
+            "region_summary": [],
+            "time_series": [],
+            "top_performers": {},
+            "cross_summary": [],
         }
+
+    def _compute_overall_metrics(self, df: pd.DataFrame, report_type: str, config: dict) -> dict:
+        """Calculate high-level KPIs based on report type."""
+        metrics = {
+            "total_transactions": len(df),
+            "report_type": report_type
+        }
+
+        if report_type == "sales_report":
+            rev = float(df["revenue"].sum()) if "revenue" in df.columns else 0
+            cost = float(df["cost"].sum()) if "cost" in df.columns else 0
+            units = float(df["units_sold"].sum()) if "units_sold" in df.columns else 0
+            profit = rev - cost
+            metrics.update({
+                "total_revenue": round(rev, 2),
+                "total_cost": round(cost, 2),
+                "gross_profit": round(profit, 2),
+                "gross_margin_pct": round((profit / rev * 100) if rev > 0 else 0, 2),
+                "total_units_sold": int(units)
+            })
+        elif report_type == "inventory_report":
+            avg_stock = float(df["stock_level"].mean()) if "stock_level" in df.columns else 0
+            low_stock = int((df["stock_level"] < df["reorder_point"]).sum()) if "stock_level" in df.columns and "reorder_point" in df.columns else 0
+            metrics.update({
+                "avg_stock_level": round(avg_stock, 1),
+                "low_stock_items": low_stock,
+                "out_of_stock_items": int((df["stock_level"] == 0).sum()) if "stock_level" in df.columns else 0
+            })
+        elif report_type == "financial_report":
+            total_amt = float(df["amount"].sum()) if "amount" in df.columns else 0
+            metrics.update({
+                "total_amount": round(total_amt, 2),
+                "avg_transaction_size": round(total_amt / len(df), 2) if len(df) > 0 else 0
+            })
 
         if "date" in df.columns:
             valid_dates = df["date"].dropna()
-            if len(valid_dates) > 0:
+            if not valid_dates.empty:
                 metrics["date_range_start"] = str(valid_dates.min().date())
                 metrics["date_range_end"] = str(valid_dates.max().date())
 
         return metrics
 
-    def _aggregate_by_dimension(self, df: pd.DataFrame, dimension: str) -> list[dict]:
-        """Aggregate metrics by a single dimension (e.g., product or region)."""
+    def _aggregate_by_dimension(self, df: pd.DataFrame, dimension: str, config: dict) -> list[dict]:
+        """Aggregate metrics by a single dimension."""
         if dimension not in df.columns:
             return []
 
-        agg_df = df.groupby(dimension, dropna=False).agg(
-            total_revenue=("revenue", "sum"),
-            total_cost=("cost", "sum"),
-            total_units=("units_sold", "sum"),
-            transaction_count=("revenue", "count"),
-            avg_unit_price=("unit_price", "mean"),
-        ).reset_index()
+        # Find the main measure to aggregate
+        main_measure = config["measures"][0]
+        
+        agg_map = {main_measure: ["sum", "mean", "count"]}
+        # If there are multiple measures, sum them all
+        for m in config["measures"][1:]:
+            agg_map[m] = ["sum"]
 
-        agg_df["gross_profit"] = agg_df["total_revenue"] - agg_df["total_cost"]
-        agg_df["gross_margin_pct"] = (
-            agg_df["gross_profit"] / agg_df["total_revenue"] * 100
-        ).fillna(0)
+        agg_df = df.groupby(dimension, dropna=False).agg(agg_map).reset_index()
+        
+        # Flatten multi-index columns if they exist
+        if isinstance(agg_df.columns, pd.MultiIndex):
+            agg_df.columns = [
+                f"{col}_{stat}" if stat else col 
+                for col, stat in agg_df.columns
+            ]
 
-        # Revenue share
-        total_rev = agg_df["total_revenue"].sum()
-        agg_df["revenue_share_pct"] = (agg_df["total_revenue"] / total_rev * 100).fillna(0)
+        # Rename for simplicity and clean up internal naming
+        primary_col = f"{main_measure}_sum"
+        if primary_col in agg_df.columns:
+            agg_df = agg_df.sort_values(primary_col, ascending=False)
 
-        # Sort by revenue descending
-        agg_df = agg_df.sort_values("total_revenue", ascending=False)
+        # Round all numeric columns
+        numeric_cols = agg_df.select_dtypes(include=['number']).columns
+        agg_df[numeric_cols] = agg_df[numeric_cols].round(2)
 
-        # Round values
-        for col in ["total_revenue", "total_cost", "gross_profit", "gross_margin_pct",
-                     "avg_unit_price", "revenue_share_pct"]:
-            agg_df[col] = agg_df[col].round(2)
+        # Keep top 50 to prevent context overflow
+        return agg_df.head(50).to_dict(orient="records")
 
-        return agg_df.to_dict(orient="records")
-
-    def _aggregate_by_time(self, df: pd.DataFrame, period: str) -> list[dict]:
+    def _aggregate_by_time(self, df: pd.DataFrame, period: str, config: dict) -> list[dict]:
         """Aggregate metrics by time period."""
         if "date" not in df.columns:
             return []
 
         df_time = df.dropna(subset=["date"]).copy()
-        if len(df_time) == 0:
+        if df_time.empty:
             return []
 
-        # Set period grouper
         freq_map = {"daily": "D", "weekly": "W", "monthly": "MS"}
         freq = freq_map.get(period, "MS")
-
         df_time["period"] = df_time["date"].dt.to_period(
             {"D": "D", "W": "W", "MS": "M"}.get(freq, "M")
-        )
+        ).astype(str)
 
-        agg_df = df_time.groupby("period").agg(
-            total_revenue=("revenue", "sum"),
-            total_cost=("cost", "sum"),
-            total_units=("units_sold", "sum"),
-            transaction_count=("revenue", "count"),
-        ).reset_index()
+        main_measure = config["measures"][0]
+        agg_df = df_time.groupby("period").agg({
+            main_measure: "sum",
+            "date": "count"
+        }).rename(columns={main_measure: f"total_{main_measure}", "date": "transaction_count"}).reset_index()
 
-        agg_df["period"] = agg_df["period"].astype(str)
-        agg_df["gross_profit"] = agg_df["total_revenue"] - agg_df["total_cost"]
-        agg_df["gross_margin_pct"] = (
-            agg_df["gross_profit"] / agg_df["total_revenue"] * 100
-        ).fillna(0)
-
-        # Period-over-period growth
-        agg_df["revenue_growth_pct"] = agg_df["total_revenue"].pct_change() * 100
-        agg_df = agg_df.fillna(0)
-
-        # Round
-        for col in ["total_revenue", "total_cost", "gross_profit", "gross_margin_pct", "revenue_growth_pct"]:
-            agg_df[col] = agg_df[col].round(2)
-
+        # Growth calculation
+        val_col = f"total_{main_measure}"
+        agg_df["growth_pct"] = agg_df[val_col].pct_change().fillna(0) * 100
+        
+        agg_df = agg_df.round(2)
         return agg_df.to_dict(orient="records")
 
-    def _get_top_performers(self, df: pd.DataFrame) -> dict:
-        """Identify top-performing products and sales reps."""
+    def _get_top_performers(self, df: pd.DataFrame, config: dict) -> dict:
+        """Identify top performers in the relative dimensions."""
         result = {}
-
-        # Top products by revenue
-        if "product" in df.columns:
-            top_products = (
-                df.groupby("product")["revenue"]
-                .sum()
-                .sort_values(ascending=False)
-                .head(5)
-            )
-            result["top_products_by_revenue"] = [
-                {"product": name, "revenue": round(float(val), 2)}
-                for name, val in top_products.items()
-            ]
-
-        # Top sales reps by revenue
-        if "sales_rep" in df.columns:
-            top_reps = (
-                df.groupby("sales_rep")["revenue"]
-                .sum()
-                .sort_values(ascending=False)
-                .head(5)
-            )
-            result["top_reps_by_revenue"] = [
-                {"sales_rep": name, "revenue": round(float(val), 2)}
-                for name, val in top_reps.items()
-            ]
-
-        # Top region by revenue
-        if "region" in df.columns:
-            top_regions = (
-                df.groupby("region")["revenue"]
-                .sum()
-                .sort_values(ascending=False)
-            )
-            result["top_regions_by_revenue"] = [
-                {"region": name, "revenue": round(float(val), 2)}
-                for name, val in top_regions.items()
-            ]
-
+        measure = config["measures"][0]
+        
+        for dim in config["dimensions"]:
+            if dim in df.columns:
+                top = df.groupby(dim)[measure].sum().sort_values(ascending=False).head(5)
+                result[f"top_{dim}_by_{measure}"] = [
+                    {dim: name, measure: round(float(val), 2)}
+                    for name, val in top.items()
+                ]
         return result
 
-    def _aggregate_cross_dimensions(self, df: pd.DataFrame, dim1: str, dim2: str) -> list[dict]:
+    def _aggregate_cross_dimensions(self, df: pd.DataFrame, dim1: str, dim2: str, config: dict) -> list[dict]:
         """Cross-tabulate two dimensions."""
         if dim1 not in df.columns or dim2 not in df.columns:
             return []
 
-        cross = df.groupby([dim1, dim2]).agg(
-            total_revenue=("revenue", "sum"),
-            total_units=("units_sold", "sum"),
-        ).reset_index()
+        measure = config["measures"][0]
+        cross = df.groupby([dim1, dim2]).agg({
+            measure: "sum"
+        }).reset_index()
 
-        cross["total_revenue"] = cross["total_revenue"].round(2)
-        cross = cross.sort_values("total_revenue", ascending=False).head(20)
+        cross[measure] = cross[measure].round(2)
+        return cross.sort_values(measure, ascending=False).head(20).to_dict(orient="records")
 
-        return cross.to_dict(orient="records")

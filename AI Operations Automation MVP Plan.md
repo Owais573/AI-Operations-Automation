@@ -58,21 +58,23 @@ CSV / Mock ERP Data
 ├─────────────────────────┤
 │   Aggregation Agent     │  → Group, summarize, calculate metrics
 ├─────────────────────────┤
-│   Analysis Agent (LLM)  │  → Generate insights, detect trends & anomalies
+│   Aggregation Agent     │  → Dynamic grouping based on report type
+├─────────────────────────┤
+│   Analysis Agent (LLM)  │  → Generalized insights across domains
 ├─────────────────────────┤
 │   ▸ Human Approval Gate │  → Pause for human review before final report
 ├─────────────────────────┤
-│   Report Agent          │  → Generate Markdown + PDF report
+│   Report Agent          │  → Context-aware Markdown + PDF report
 ├─────────────────────────┤
-│   Delivery Agent        │  → Send via Slack / Email
+│   Delivery Agent        │  → Multi-channel dispatch (Slack/Email)
 └─────────────────────────┘
 ```
 
 **Key MVP differentiators:**
-- Agents are **LLM-powered** (not simple Python functions)
-- Workflow has **human-in-the-loop approval** before final report
-- Full **run tracking** with agent-level logs
-- **Dashboard** for monitoring and managing workflows
+- **Dynamic Report Support**: Single pipeline handles diverse business operational data.
+- **LLM-powered reasoning**: Agents adapt to data schemas without hardcoding.
+- **Human-in-the-loop**: Integrated approval checkpoints.
+- **Full Observability**: Detailed agent execution logs and duration tracking.
 
 ---
 
@@ -195,7 +197,7 @@ ai-operations-automation/
 │   │   │   ├── page.tsx                 # Dashboard home
 │   │   │   ├── runs/page.tsx            # Workflow run history
 │   │   │   ├── reports/page.tsx         # Report viewer & downloader
-│   │   │   └── approvals/page.tsx       # Approval queue
+│   │   │   ├── approvals/page.tsx       # Approval queue
 │   │   ├── components/
 │   │   │   ├── ui/                      # ShadCN UI components
 │   │   │   ├── dashboard/              # Dashboard-specific components
@@ -513,15 +515,13 @@ class CleaningAgent(BaseAgent):
 
 ### 8.4 Aggregation Agent
 
-**Purpose:** Dynamically group and summarize data based on the report type.
+**Purpose:** Dynamically group and summarize data based on the identified report type (Sales, Inventory, or Financial).
 
-| Metric | Calculation |
-|--------|------------|
-| Total Revenue | `SUM(revenue)` grouped by product/region |
-| Total Units | `SUM(units_sold)` grouped by product/region |
-| Profit Margin | `(revenue - cost) / revenue * 100` |
-| Growth Rate | Period-over-period comparison |
-| Top Products | Ranked by revenue |
+| Report Type | Dimensions | Key Measures |
+|-------------|------------|--------------|
+| **Sales** | Product, Region, Time | Revenue, Cost, Units Sold, Margin |
+| **Inventory** | SKU, Warehouse, Category | Stock Level, Reorder Point, Value |
+| **Financial** | Department, Category, Type | Amount, Budget Variance |
 
 ```python
 class AggregationAgent(BaseAgent):
@@ -1075,21 +1075,21 @@ The Next.js dashboard provides full visibility into the automation system.
 - APScheduler setup for periodic workflow runs
 - Supabase Storage for PDF report files
 
-### Phase 6: Frontend Dashboard (Days 15–20)
+### Phase 6: Frontend Dashboard (Done)
 - Next.js project setup with ShadCN UI
 - Dashboard home page with summary statistics
 - Run history page with filtering and sorting
 - Run detail page with agent execution timeline
 - Report viewer with in-browser preview and PDF download
 - Approval queue page with approve/reject actions
-- Real-time status updates via polling or WebSocket
+- Real-time status updates via polling
 
-### Phase 7: Documentation & Polish (Done)
-- Architecture documentation (`docs/architecture.md`)
-- Workflow analysis document (`docs/workflow-analysis.md`)
-- Agent design documentation (`docs/agent-design.md`)
-- README with complete setup instructions
-- Demo recording / screenshots for portfolio
+### Phase 7: Multi-Report & Final Polish (Done)
+- Refactored agents to support dynamic schemas (Sales, Inventory, Finance)
+- Implemented report type selector on Dashboard
+- Fixed dynamic report titles in UI
+- Added cascading deletion and storage cleanup for workflow runs
+- Final documentation and GitHub push
 
 ---
 

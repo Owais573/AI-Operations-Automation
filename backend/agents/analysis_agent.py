@@ -18,33 +18,36 @@ from backend.database.db import DatabaseClient
 
 
 ANALYSIS_SYSTEM_PROMPT = """You are a senior business intelligence analyst for an enterprise operations team.
-Given aggregated sales data and metrics, perform a thorough analysis.
+Analyze the provided business data and metrics to generate strategic insights.
+
+The data could be about SALES, INVENTORY, FINANCE, or other operational areas. 
+Adapt your reasoning based on the metrics provided.
 
 You MUST respond with ONLY valid JSON. No markdown, no code blocks, no extra text.
 
 Respond with this exact JSON structure:
 {
-    "executive_summary": "2-3 sentence high-level summary of business performance",
+    "executive_summary": "2-3 sentence high-level summary of the operational performance",
     "key_findings": [
         {
             "finding": "Brief description of the finding",
             "category": "trend" | "anomaly" | "opportunity" | "risk",
             "impact": "high" | "medium" | "low",
-            "details": "Detailed explanation with specific numbers",
+            "details": "Detailed explanation with specific numbers and metrics",
             "recommendation": "Actionable recommendation"
         }
     ],
     "trend_analysis": {
-        "revenue_trend": "description of revenue trend over time",
-        "growth_assessment": "growing" | "stable" | "declining",
-        "seasonality_notes": "any seasonal patterns observed"
+        "primary_trend": "description of the primary metric trend over time",
+        "growth_assessment": "improving" | "stable" | "declining",
+        "observations": "any notable patterns observed in the time series"
     },
     "anomalies_detected": [
         {
-            "description": "What was unusual",
+            "description": "What was unusual about the data",
             "severity": "critical" | "warning" | "info",
             "affected_metric": "which metric(s) were affected",
-            "possible_cause": "likely explanation"
+            "possible_cause": "likely explanation based on the data"
         }
     ],
     "recommendations": [
@@ -60,29 +63,17 @@ Respond with this exact JSON structure:
 }
 
 Analysis Rules:
-- Use specific numbers and percentages, not vague language
-- Compare month-over-month and identify trends
-- Flag any metrics that deviate >20% from average as anomalies
-- Provide at least 3 actionable recommendations
-- Be honest about data limitations
-- Focus on the most impactful findings first
+- Use specific numbers and percentages provided in the data.
+- Compare metrics across time periods if available.
+- Identify correlations between different dimensions (e.g., regions/departments/warehouses).
+- Provide actionable, business-oriented recommendations.
+- Focus on performance, efficiency, and risk highlights.
 """
 
 
 class AnalysisAgent(BaseAgent):
     """
     LLM-powered agent that generates business insights from aggregated data.
-
-    Input:
-        overall_metrics: dict -- High-level KPIs from aggregation
-        product_summary: list[dict] -- Per-product metrics
-        region_summary: list[dict] -- Per-region metrics
-        time_series: list[dict] -- Time-based metrics
-        top_performers: dict -- Best-performing products/reps
-        cleaning_report: dict (optional) -- Data cleaning summary
-
-    Output:
-        insights: dict -- Structured analysis with findings, trends, anomalies, recommendations
     """
 
     def __init__(self, db: DatabaseClient):
@@ -113,11 +104,12 @@ class AnalysisAgent(BaseAgent):
 
     def _build_analysis_context(self, input_data: dict) -> str:
         """Build a comprehensive text summary for the LLM."""
-        lines = ["=== BUSINESS DATA ANALYSIS CONTEXT ===", ""]
+        report_type = input_data.get("report_type", "General Business")
+        lines = [f"=== {report_type.upper()} ANALYSIS CONTEXT ===", ""]
 
         # Overall metrics
         metrics = input_data.get("overall_metrics", {})
-        lines.append("--- OVERALL METRICS ---")
+        lines.append("--- OVERALL KPIs & METRICS ---")
         for key, value in metrics.items():
             lines.append(f"  {key}: {value}")
         lines.append("")
@@ -125,62 +117,46 @@ class AnalysisAgent(BaseAgent):
         # Time series
         time_series = input_data.get("time_series", [])
         if time_series:
-            lines.append("--- MONTHLY PERFORMANCE ---")
+            lines.append("--- PERFORMANCE OVER TIME ---")
             for period in time_series:
-                lines.append(
-                    f"  {period.get('period', '?')}: "
-                    f"Revenue=${period.get('total_revenue', 0):,.2f} | "
-                    f"Profit=${period.get('gross_profit', 0):,.2f} | "
-                    f"Margin={period.get('gross_margin_pct', 0):.1f}% | "
-                    f"Growth={period.get('revenue_growth_pct', 0):+.1f}%"
-                )
+                p_text = f"  {period.get('period', '?')}: "
+                # Dynamically include any 'total_*' or 'growth_*' columns
+                measure_parts = []
+                for k, v in period.items():
+                    if k != "period":
+                        if isinstance(v, float):
+                            measure_parts.append(f"{k}={v:.2f}")
+                        else:
+                            measure_parts.append(f"{k}={v}")
+                lines.append(p_text + " | ".join(measure_parts))
             lines.append("")
 
-        # Product summary
-        products = input_data.get("product_summary", [])
-        if products:
-            lines.append("--- PRODUCT PERFORMANCE ---")
-            for p in products[:10]:
-                lines.append(
-                    f"  {p.get('product', '?')}: "
-                    f"Revenue=${p.get('total_revenue', 0):,.2f} | "
-                    f"Units={p.get('total_units', 0):,.0f} | "
-                    f"Margin={p.get('gross_margin_pct', 0):.1f}% | "
-                    f"Share={p.get('revenue_share_pct', 0):.1f}%"
-                )
-            lines.append("")
-
-        # Region summary
-        regions = input_data.get("region_summary", [])
-        if regions:
-            lines.append("--- REGIONAL PERFORMANCE ---")
-            for r in regions:
-                lines.append(
-                    f"  {r.get('region', '?')}: "
-                    f"Revenue=${r.get('total_revenue', 0):,.2f} | "
-                    f"Units={r.get('total_units', 0):,.0f} | "
-                    f"Margin={r.get('gross_margin_pct', 0):.1f}% | "
-                    f"Share={r.get('revenue_share_pct', 0):.1f}%"
-                )
-            lines.append("")
+        # Dimension Summaries (Generic)
+        for key in ["product_summary", "region_summary", "department_summary", "category_summary"]:
+            data = input_data.get(key, [])
+            if data:
+                lines.append(f"--- {key.replace('_', ' ').upper()} (Top 10) ---")
+                for item in data[:10]:
+                    parts = [f"{k}: {v}" for k, v in item.items()]
+                    lines.append("  " + " | ".join(parts))
+                lines.append("")
 
         # Top performers
         top = input_data.get("top_performers", {})
         if top:
-            lines.append("--- TOP PERFORMERS ---")
+            lines.append("--- TOP PERFORMERS & LEADERS ---")
             for category, items in top.items():
                 lines.append(f"  {category}:")
-                for item in items[:5]:
+                for item in items:
                     lines.append(f"    {item}")
             lines.append("")
 
         # Cleaning report context
         cleaning = input_data.get("cleaning_report", {})
         if cleaning:
-            lines.append("--- DATA QUALITY NOTES ---")
+            lines.append("--- DATA QUALITY & RELIABILITY ---")
             lines.append(f"  Original rows: {cleaning.get('original_row_count', '?')}")
             lines.append(f"  After cleaning: {cleaning.get('final_row_count', '?')}")
-            lines.append(f"  Rows removed: {cleaning.get('rows_removed', 0)}")
             lines.append(f"  Risk level: {cleaning.get('risk_level', '?')}")
             lines.append(f"  LLM assessment: {cleaning.get('llm_assessment', '?')}")
 
@@ -192,7 +168,7 @@ class AnalysisAgent(BaseAgent):
             model=self.model,
             messages=[
                 {"role": "system", "content": ANALYSIS_SYSTEM_PROMPT},
-                {"role": "user", "content": f"Analyze the following business data:\n\n{context}"},
+                {"role": "user", "content": f"Analyze the following operational data and provide structured insights:\n\n{context}"},
             ],
             temperature=0.2,
             max_tokens=2000,
@@ -203,7 +179,7 @@ class AnalysisAgent(BaseAgent):
 
         raw = response.choices[0].message.content.strip()
 
-        # Strip markdown code fences if present
+        # Strip markdown code fences
         if raw.startswith("```"):
             raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
             if raw.endswith("```"):
@@ -214,13 +190,13 @@ class AnalysisAgent(BaseAgent):
             return json.loads(raw)
         except json.JSONDecodeError:
             self.logger.warning("Failed to parse LLM analysis response")
+            # Fallback structure
             return {
-                "executive_summary": "Analysis completed but response parsing failed. Raw insights were generated.",
+                "executive_summary": "Analysis completed but parsing failed.",
                 "key_findings": [],
-                "trend_analysis": {"revenue_trend": "Unable to parse", "growth_assessment": "unknown", "seasonality_notes": "N/A"},
+                "trend_analysis": {"primary_trend": "Unknown", "growth_assessment": "stable", "observations": "N/A"},
                 "anomalies_detected": [],
                 "recommendations": [],
-                "confidence_score": 0.3,
-                "data_quality_notes": "LLM response could not be parsed as structured JSON.",
-                "raw_response": raw[:1000],
+                "confidence_score": 0.5,
+                "data_quality_notes": "JSON parsing error.",
             }
