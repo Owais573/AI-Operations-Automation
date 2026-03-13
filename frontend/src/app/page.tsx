@@ -62,7 +62,7 @@ export default function DashboardPage() {
     try {
       await triggerWorkflow({
         workflow_type: "sales_report",
-        file_path: "data/mock_sales_data.csv",
+        file_path: "f:/Antigravity/AI Operations Automation/data/mock_sales_data.csv",
       });
       setTimeout(loadData, 2000);
     } catch (err) {
