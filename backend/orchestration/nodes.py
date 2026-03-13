@@ -1,3 +1,5 @@
+import os
+from datetime import datetime, timezone
 from typing import Dict, Any
 
 from backend.database.db import get_db
@@ -18,7 +20,6 @@ async def ingest_node(state: WorkflowState) -> Dict[str, Any]:
     logger.info(f"Node [ingest] starting for run_id={state['run_id']}")
     try:
         db = get_db()
-        from datetime import datetime, timezone
         # Set started_at for the whole run
         await db.update_workflow_run(state["run_id"], {
             "status": "running",
@@ -223,7 +224,6 @@ async def deliver_node(state: WorkflowState) -> Dict[str, Any]:
         
         # Mark workflow as completed with timestamp
         db = get_db()
-        from datetime import datetime, timezone
         await db.update_workflow_run(state["run_id"], {
             "status": "completed",
             "completed_at": datetime.now(timezone.utc).isoformat()

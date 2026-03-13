@@ -63,7 +63,10 @@ class DatabaseClient:
         Returns True if successful.
         """
         try:
-            # 1. Get associated report to find storage path
+            # 1. Determine storage paths to clean up
+            storage_paths = []
+            
+            # Try to get from DB first
             report_result = (
                 self.client.table("reports")
                 .select("pdf_storage_path")
@@ -73,14 +76,22 @@ class DatabaseClient:
             )
             
             if report_result.data and report_result.data.get("pdf_storage_path"):
+                storage_paths.append(report_result.data["pdf_storage_path"])
+            
+            # Fallback/Guess: Older files used run_id/run_id.pdf
+            fallback_path = f"{run_id}/{run_id}.pdf"
+            if fallback_path not in storage_paths:
+                storage_paths.append(fallback_path)
+
+            if storage_paths:
                 from backend.services.storage import delete_file
-                storage_path = report_result.data["pdf_storage_path"]
-                await delete_file(storage_path)
+                for path in storage_paths:
+                    await delete_file(path)
 
             # 2. Delete the run (DB cascade handles logs, report record, and approvals)
             self.client.table("workflow_runs").delete().eq("id", run_id).execute()
             
-            logger.info(f"Deleted workflow run and associated data: {run_id}")
+            logger.info(f"Deleted workflow run and cleaned up storage paths: {storage_paths}")
             return True
         except Exception as e:
             logger.error(f"Error deleting workflow run {run_id}: {e}")
