@@ -173,7 +173,7 @@ export default function ApprovalsPage() {
                           Full Analysis Data
                         </DialogTitle>
                       </DialogHeader>
-                      <pre className="mt-4 text-xs text-zinc-400 whitespace-pre-wrap">
+                      <pre className="mt-4 text-sm text-zinc-400 whitespace-pre-wrap">
                         {JSON.stringify(approval.data_snapshot, null, 2)}
                       </pre>
                     </DialogContent>
