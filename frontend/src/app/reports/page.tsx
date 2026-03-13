@@ -76,16 +76,9 @@ export default function ReportsPage() {
               </CardHeader>
               <CardContent className="flex gap-2">
                 <Dialog>
-                  <DialogTrigger>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-white/10"
-                      onClick={() => setSelectedReport(report)}
-                    >
-                      <Eye className="mr-2 h-4 w-4" />
-                      Preview
-                    </Button>
+                  <DialogTrigger render={<Button variant="outline" size="sm" className="border-white/10" onClick={() => setSelectedReport(report)} />}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    Preview
                   </DialogTrigger>
                   <DialogContent className="max-h-[80vh] max-w-3xl overflow-y-auto bg-zinc-950 border-white/10">
                     <DialogHeader>

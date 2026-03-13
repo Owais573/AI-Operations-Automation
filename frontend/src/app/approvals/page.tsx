@@ -163,11 +163,9 @@ export default function ApprovalsPage() {
 
                   {/* Full Data Preview */}
                   <Dialog>
-                    <DialogTrigger>
-                      <Button variant="outline" size="sm" className="border-white/10">
-                        <Eye className="mr-2 h-4 w-4" />
-                        View Full Analysis
-                      </Button>
+                    <DialogTrigger render={<Button variant="outline" size="sm" className="border-white/10" />}>
+                      <Eye className="mr-2 h-4 w-4" />
+                      View Full Analysis
                     </DialogTrigger>
                     <DialogContent className="max-h-[80vh] max-w-3xl overflow-y-auto bg-zinc-950 border-white/10">
                       <DialogHeader>
