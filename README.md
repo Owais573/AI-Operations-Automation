@@ -213,6 +213,7 @@ All mock data uses a fixed seed (`Faker.seed(42)`) for reproducibility.
 - **Human-in-the-Loop** -- Workflow pauses for human approval before report generation
 - **Full Observability** -- Every agent execution logged with duration, tokens, and I/O summaries
 - **Multi-format Reports** -- Markdown for web/Slack, PDF for email/download
+- **Dynamic Slack Delivery** -- Full parsing of Markdown into Slack Block Kit natively
 - **Scheduled Automation** -- Configurable periodic runs via APScheduler
 - **Free Email Delivery** -- Uses Python's built-in smtplib (no paid services)
 
@@ -229,6 +230,7 @@ All mock data uses a fixed seed (`Faker.seed(42)`) for reproducibility.
 | Phase 5: Delivery & Scheduling | Done | Slack/Email integration, APScheduler, Supabase Storage |
 | Phase 6: Frontend Dashboard | Done | Next.js dashboard with ShadCN UI |
 | Phase 7: Polish & Documentation | Done | Multi-report pipeline support, dynamic UI titles, final documentation |
+| Phase 8: Manual Delivery Updates | Done | Native Slack block extraction and responsive mobile navigation |
 
 ---
 

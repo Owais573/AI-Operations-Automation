@@ -1091,6 +1091,13 @@ The Next.js dashboard provides full visibility into the automation system.
 - Added cascading deletion and storage cleanup for workflow runs
 - Final documentation and GitHub push
 
+### Phase 15: Slack Sharing Formatting & Responsive UI (Done)
+- Refactored DeliveryAgent's `_send_slack` method to natively parse full markdown block kit elements.
+- Adjusted Report API's slack_share endpoint to conditionally fetch raw insights and route to DeliveryAgent.
+- Replaced frontend `alert` calls with `sonner` toast notifications on the Reports page.
+- Adjusted the Reports page grid layout to wrap action buttons (`Share to Slack`, `View`, `Delete`) securely on mobile screens using `flex-wrap` and `sm:flex-grow-0`.
+- Implemented a responsive bottom-dock navigation for mobile devices, hiding the sidebar layout on small screens via `md:ml-64` utilities.
+
 ---
 
 ## 16. Deliverables

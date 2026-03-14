@@ -11,7 +11,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { RefreshCw, FileText, Download, Eye, FileWarning } from "lucide-react";
+import { RefreshCw, FileText, Download, Eye, FileWarning, MessageSquare } from "lucide-react";
+import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -19,6 +20,7 @@ export default function ReportsPage() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [sharingReportId, setSharingReportId] = useState<string | null>(null);
 
   async function loadReports() {
     setLoading(true);
@@ -35,6 +37,20 @@ export default function ReportsPage() {
   useEffect(() => {
     loadReports();
   }, []);
+
+  async function handleShareToSlack(reportId: string) {
+    setSharingReportId(reportId);
+    try {
+      const { shareReportToSlack } = await import("@/lib/api");
+      await shareReportToSlack(reportId);
+      toast.success("Report successfully shared to Slack!");
+    } catch (err: any) {
+      console.error("Slack share error:", err);
+      toast.error(err.message || "Failed to share report to Slack.");
+    } finally {
+      setSharingReportId(null);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -76,9 +92,9 @@ export default function ReportsPage() {
                   {new Date(report.created_at).toLocaleString()}
                 </p>
               </CardHeader>
-              <CardContent className="flex gap-2">
+              <CardContent className="flex flex-col sm:flex-row flex-wrap gap-2">
                 <Dialog>
-                  <DialogTrigger render={<Button variant="outline" size="sm" className="border-white/10" onClick={() => setSelectedReport(report)} />}>
+                  <DialogTrigger render={<Button variant="outline" size="sm" className="w-full sm:w-auto border-white/10" onClick={() => setSelectedReport(report)} />}>
                     <Eye className="mr-2 h-4 w-4" />
                     Preview
                   </DialogTrigger>
@@ -107,11 +123,12 @@ export default function ReportsPage() {
                     href={report.pdf_public_url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    className="w-full sm:w-auto"
                   >
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-white/10 hover:bg-white/5"
+                      className="w-full sm:w-auto border-white/10 hover:bg-white/5"
                     >
                       <Download className="mr-2 h-4 w-4" />
                       PDF
@@ -121,13 +138,29 @@ export default function ReportsPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-white/10 text-zinc-500 cursor-not-allowed"
+                    className="w-full sm:w-auto border-white/10 text-zinc-500 cursor-not-allowed"
                     title="PDF generation failed for this report (Markdown only)"
                   >
                     <FileWarning className="mr-2 h-4 w-4" />
                     No PDF
                   </Button>
                 )}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full sm:w-auto border-white/10 hover:bg-[#4A154B] hover:text-white transition-colors sm:ml-auto"
+                  onClick={() => handleShareToSlack(report.id)}
+                  disabled={sharingReportId === report.id}
+                  title="Share this report to the configured Slack channel"
+                >
+                  {sharingReportId === report.id ? (
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                  )}
+                  Share to Slack
+                </Button>
               </CardContent>
             </Card>
           ))}

@@ -23,4 +23,33 @@ async def get_report(report_id: str):
         raise HTTPException(status_code=404, detail="Report not found")
     return report
 
+@router.post("/{report_id}/share/slack", response_model=Dict[str, Any])
+async def share_report_slack(report_id: str):
+    """Manually share a report to Slack."""
+    db = get_db()
+    report = await db.get_report(report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+        
+    try:
+        # We can reuse the DeliveryAgent's slack logic without logging it as a formal workflow run
+        from backend.agents.delivery_agent import DeliveryAgent
+        agent = DeliveryAgent(db=db)
+        title = report.get("title", f"Report {report_id}")
+        markdown = report.get("content_markdown", "")
+        
+        # Include PDF link in message if available
+        pdf_url = report.get("pdf_public_url")
+        if pdf_url:
+            markdown += f"\n\n**📄 [Download PDF Report]({pdf_url})**"
+            
+        result = await agent._send_slack(title, {}, markdown)
+        
+        if result.get("status") == "failed":
+            raise HTTPException(status_code=500, detail=result.get("detail", "Slack delivery failed"))
+            
+        return {"status": "success", "message": "Report shared to Slack"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Note: Download PDF would go here once Supabase Storage or local static files are fully enabled.

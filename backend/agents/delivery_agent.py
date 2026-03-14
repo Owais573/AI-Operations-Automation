@@ -84,38 +84,52 @@ class DeliveryAgent(BaseAgent):
             return {"status": "skipped", "detail": "Webhook URL not configured"}
 
         try:
-            # Build Slack message with Block Kit
-            executive_summary = insights.get("executive_summary", "Report generated successfully.")
-            findings = insights.get("key_findings", [])
-            recommendations = insights.get("recommendations", [])
+            # Build Slack message with Block Kit from full Markdown report
+            import re
+            
+            # Convert Markdown bold to Slack bold
+            report_text = re.sub(r'\*\*(.+?)\*\*', r'*\1*', full_report)
+            # Convert Markdown links [text](url) to Slack links <url|text>
+            report_text = re.sub(r'\[(.*?)\]\((.*?)\)', r'<\2|\1>', report_text)
+            # Convert Markdown headers H3+ to Slack bold
+            report_text = re.sub(r'^###+\s+(.+)$', r'*\1*', report_text, flags=re.MULTILINE)
 
             blocks = [
                 {
                     "type": "header",
                     "text": {"type": "plain_text", "text": f"📊 {title}"}
                 },
-                {
-                    "type": "section",
-                    "text": {"type": "mrkdwn", "text": f"*Executive Summary*\n{executive_summary}"}
-                },
-                {"type": "divider"},
+                {"type": "divider"}
             ]
 
-            # Key findings (top 3)
-            if findings:
-                finding_text = "*Key Findings:*\n"
-                for f in findings[:3]:
-                    impact = f.get("impact", "").upper()
-                    icon = {"HIGH": "🔴", "MEDIUM": "🟡", "LOW": "🟢"}.get(impact, "⚪")
-                    finding_text += f"{icon} {f.get('finding', '')}\n"
-                blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": finding_text}})
+            # Split by H2 headers
+            sections = re.split(r'^##\s+(.+)$', report_text, flags=re.MULTILINE)
 
-            # Top recommendations (top 2)
-            if recommendations:
-                rec_text = "*Top Recommendations:*\n"
-                for r in recommendations[:2]:
-                    rec_text += f"→ *{r.get('title', '')}*: {r.get('description', '')}\n"
-                blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": rec_text}})
+            # sections[0] is everything before the first H2 (usually intro or metadata)
+            intro = sections[0].strip()
+            if intro:
+                blocks.append({
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": intro[:3000]}
+                })
+
+            for i in range(1, len(sections), 2):
+                header = sections[i]
+                content = sections[i+1].strip()
+                if content:
+                    # chunkcontent if it exceeds Slack's 3000 char per block limit
+                    chunk_text = f"*{header}*\n{content}"
+                    if len(chunk_text) > 3000:
+                        chunk_text = chunk_text[:2997] + "..."
+                        
+                    blocks.append({
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": chunk_text}
+                    })
+
+            # Check Slack's 50 block limit
+            if len(blocks) > 50:
+                blocks = blocks[:49] + [{"type": "section", "text": {"type": "mrkdwn", "text": "*...Report truncated due to length.*"}}]
 
             payload = {"blocks": blocks}
 

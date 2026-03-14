@@ -52,6 +52,12 @@ export function fetchReport(reportId: string) {
   return apiFetch<Report>(`/api/reports/${reportId}`);
 }
 
+export function shareReportToSlack(reportId: string) {
+  return apiFetch<{ status: string; message: string }>(`/api/reports/${reportId}/share/slack`, {
+    method: "POST",
+  });
+}
+
 // ── Approvals ──
 export function fetchPendingApprovals() {
   return apiFetch<Approval[]>("/api/approvals/pending");
