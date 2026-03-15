@@ -184,10 +184,13 @@ async def report_node(state: WorkflowState) -> Dict[str, Any]:
         try:
             embed_agent = EmbeddingAgent(db=db)
             import asyncio
-            asyncio.create_task(embed_agent.index_report(
-                report_id=report_record["id"],
-                title=report_title,
-                content=markdown_content
+            asyncio.create_task(embed_agent.execute(
+                state["run_id"],
+                {
+                    "report_id": report_record["id"],
+                    "title": report_title,
+                    "content": markdown_content
+                }
             ))
         except Exception as e:
             logger.warning(f"Indexing failed for report {report_record['id']}: {e}")

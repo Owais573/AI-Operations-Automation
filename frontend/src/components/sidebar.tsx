@@ -8,6 +8,7 @@ import {
   FileText,
   ShieldCheck,
   Clock,
+  BookOpen,
 } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { NotificationBell } from "./notification-bell";
@@ -18,6 +19,7 @@ const navItems = [
   { href: "/reports", label: "Reports", icon: FileText },
   { href: "/approvals", label: "Approvals", icon: ShieldCheck },
   { href: "/schedules", label: "Schedules", icon: Clock },
+  { href: "/documentation", label: "Documentation", icon: BookOpen },
 ];
 
 export default function Sidebar() {
@@ -50,10 +52,9 @@ export default function Sidebar() {
               key={item.href}
               href={item.href}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 group
-                ${
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                ${isActive
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 }`}
             >
               <Icon className={`h-4 w-4 transition-transform duration-200 group-hover:scale-110 ${isActive ? "text-primary-foreground" : "text-primary"}`} />
@@ -66,7 +67,7 @@ export default function Sidebar() {
       {/* Footer */}
       <div className="border-t border-border px-4 py-4 flex items-center justify-between">
         <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">
-          v0.1.0 · LangGraph
+          AI Operations Automation
         </p>
         <ThemeToggle />
       </div>

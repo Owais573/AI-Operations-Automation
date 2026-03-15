@@ -13,20 +13,20 @@ from backend.agents.base_agent import BaseAgent
 from backend.config import get_settings
 from backend.database.db import DatabaseClient
 
-CHAT_SYSTEM_PROMPT = """You are an expert business analyst chat assistant. 
-You are helping a user understand a specific operational report.
+CHAT_SYSTEM_PROMPT = """You are a senior Business Strategy & Operations Analyst.
+Your goal is to help the user extract maximum value from their operational reports.
 
 Your context includes:
-1. The full Markdown report content.
-2. Structured measurements (aggregations).
-3. AI Insights (findings, anomalies, recommendations).
+1. The FULL Markdown report (primary source of truth).
+2. Structured measurements and KPIs.
+3. Analysis insights and anomalies.
 
-Rules:
-- Answer ONLY based on the provided data. If the data doesn't contain the answer, say so.
-- Be concise and professional.
-- Use numbers and specific trends from the data.
-- If the user asks for a chart description, explain what the data shows.
-- If the user asks about an anomaly, explain why it was flagged.
+Capabilities & Guidelines:
+- Strategic Advice: Provide concrete, actionable advice on business growth, cost reduction, and operational efficiency.
+- Data-Driven: Always cite specific numbers, percentages, and trends from the data.
+- Proactive Analysis: If the data shows a decline or an opportunity, point it out even if not directly asked.
+- Improvement Focus: When asked 'how to improve', combine the report's recommendations with your own strategic reasoning based on the metrics.
+- Clarity: Use bullet points for complex advice.
 
 Context for the current report:
 {context}
@@ -38,6 +38,20 @@ class ChatAgent(BaseAgent):
         settings = get_settings()
         self.llm = AsyncOpenAI(api_key=settings.openai_api_key)
         self.model = settings.openai_model
+
+    async def run(self, input_data: dict) -> dict:
+        """
+        Agent entry point. Expects 'report_data', 'user_query', and optionally 'chat_history'.
+        """
+        report_data = input_data.get("report_data")
+        user_query = input_data.get("user_query")
+        chat_history = input_data.get("chat_history", [])
+        
+        if not report_data or not user_query:
+            raise ValueError("ChatAgent requires 'report_data' and 'user_query'.")
+            
+        answer = await self.chat(report_data, user_query, chat_history)
+        return {"answer": answer}
 
     async def chat(self, report_data: dict, user_query: str, chat_history: list = []) -> str:
         self.logger.info(f"Processing chat query for report: {report_data.get('title')}")
@@ -61,49 +75,38 @@ class ChatAgent(BaseAgent):
         response = await self.llm.chat.completions.create(
             model=self.model,
             messages=messages,
-            temperature=0,  # Factual response
-            max_tokens=1000,
+            temperature=0.2, # Slightly more creative for advice
+            max_tokens=1500,
         )
 
         if response.usage:
             self.tokens_used += response.usage.total_tokens
 
         answer = response.choices[0].message.content.strip()
-        
-        # Log the interaction
-        await self.log_agent_run(
-            run_id="chat-" + str(report_data.get("id")), 
-            step="chat_query",
-            status="completed",
-            input_data={"query": user_query},
-            output_data={"answer": answer}
-        )
-
         return answer
 
     def _build_chat_context(self, report_data: dict) -> str:
-        """Condensed report context for the chat prompt."""
+        """Full contextual assembly for the chat prompt."""
         lines = []
         lines.append(f"Report Title: {report_data.get('title')}")
         lines.append(f"Generated At: {report_data.get('created_at')}")
         
-        # Summary
+        # 1. Primary Report Text (CRITICAL)
+        markdown = report_data.get("content_markdown", "")
+        if markdown:
+            lines.append("\n=== FULL REPORT CONTENT ===")
+            lines.append(markdown)
+        
+        # 2. Key Insights
         insights = report_data.get("insights", {})
-        if insights.get("executive_summary"):
-            lines.append(f"Executive Summary: {insights['executive_summary']}")
+        if insights:
+            lines.append("\n=== STRUCTURED INSIGHTS ===")
+            lines.append(json.dumps(insights, indent=2))
             
-        # Top 5 Measurements
+        # 3. Measurements
         measurements = report_data.get("measurements", [])
         if measurements:
-            lines.append("--- KEY MEASUREMENTS (TOP 5) ---")
-            for m in measurements[:5]:
-                lines.append(f"  {json.dumps(m)}")
-        
-        # Detection Feed
-        anomalies = insights.get("anomalies_detected", [])
-        if anomalies:
-            lines.append("--- DETECTED ANOMALIES ---")
-            for a in anomalies:
-                lines.append(f"  {a.get('severity').upper()}: {a.get('description')}")
+            lines.append("\n=== STRUCTURED MEASUREMENTS ===")
+            lines.append(json.dumps(measurements[:10], indent=2))
 
         return "\n".join(lines)

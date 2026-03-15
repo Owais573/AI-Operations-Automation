@@ -8,6 +8,7 @@ Provides:
 - Retry logic for transient failures
 """
 
+import math
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 
@@ -92,7 +93,9 @@ class BaseAgent(ABC):
                 f"[OK] Completed | run={run_id} | "
                 f"duration={duration_ms}ms | tokens={self.tokens_used}"
             )
-            return result
+            
+            # Ensure the returned result is also JSON compliant
+            return self._clean_nan(result)
 
         except Exception as e:
             # Calculate duration even on failure
@@ -128,26 +131,34 @@ class BaseAgent(ABC):
         """
         pass
 
-    def _create_summary(self, data: dict, max_length: int = 500) -> dict:
+    def _create_summary(self, data: dict, max_length: int = 2000) -> dict:
         """
-        Create a truncated summary of data for logging.
-        Avoids storing full DataFrames in the database.
+        Create a summary of data for logging.
+        Preserves dictionaries and lists for structured data retrieval.
+        Truncates long strings and cleans non-JSON values (NaN).
 
         Args:
             data: Data to summarize
             max_length: Max string length per value
 
         Returns:
-            Summarized dictionary
+            Summarized and sanitized dictionary
         """
         summary = {}
         for key, value in data.items():
-            if isinstance(value, list):
-                summary[key] = f"list[{len(value)} items]"
-            elif isinstance(value, dict):
-                summary[key] = f"dict[{len(value)} keys]"
-            elif isinstance(value, str) and len(value) > max_length:
+            if isinstance(value, str) and len(value) > max_length:
                 summary[key] = value[:max_length] + "..."
             else:
-                summary[key] = value
+                # Clean nested structures of NaN values and preserve dicts/lists
+                summary[key] = self._clean_nan(value)
         return summary
+
+    def _clean_nan(self, obj):
+        """Recursively replace NaN with None for JSON compliance."""
+        if isinstance(obj, dict):
+            return {k: self._clean_nan(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._clean_nan(x) for x in obj]
+        elif isinstance(obj, float) and math.isnan(obj):
+            return None
+        return obj

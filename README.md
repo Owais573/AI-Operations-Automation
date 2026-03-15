@@ -45,10 +45,7 @@ uv sync
 cp .env.example .env
 # Edit .env with your keys (SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY)
 
-# 4. Generate mock data
-uv run python -c "from backend.data_generator import generate_all; generate_all('data')"
-
-# 5. Start the backend server
+# 4. Start the backend server
 uv run uvicorn backend.main:app --reload --port 8000
 
 # 6. Visit API docs
@@ -64,7 +61,6 @@ ai-operations-automation/
 ├── backend/
 │   ├── main.py                    # FastAPI entry point + health check
 │   ├── config.py                  # Pydantic Settings (env var management)
-│   ├── data_generator.py          # Mock ERP data generator (Faker)
 │   ├── agents/                    # LLM-powered workflow agents
 │   │   ├── base_agent.py          # Abstract base with lifecycle logging
 │   │   ├── ingestion_agent.py     # CSV/Excel loader + schema validation
@@ -73,19 +69,17 @@ ai-operations-automation/
 │   │   ├── analysis_agent.py      # LLM chain-of-thought insights
 │   │   ├── report_agent.py        # LLM Markdown report + PDF generation
 │   │   └── delivery_agent.py      # Slack webhook + SMTP email
-│   ├── orchestration/             # LangGraph state machine (Phase 3)
-│   ├── api/                       # FastAPI route handlers (Phase 4)
+│   ├── orchestration/             # LangGraph state machine
+│   ├── api/                       # FastAPI route handlers
 │   ├── services/                  # External service integrations
 │   ├── database/
 │   │   └── db.py                  # Supabase client with CRUD helpers
-│   ├── scheduler/                 # APScheduler jobs (Phase 5)
+│   ├── scheduler/                 # APScheduler jobs
 │   └── utils/
 │       ├── logger.py              # Structured colored logging
 │       └── error_handler.py       # Custom exceptions + FastAPI handlers
-├── data/                          # Generated mock CSV datasets
-│   ├── mock_sales_data.csv        # 620 rows with intentional anomalies
-│   ├── mock_inventory_data.csv    # 344 rows with stock levels
-│   └── mock_financial_data.csv    # 250 rows financial metrics
+├── data/                          # Operational data storage
+│   └── uploads/                   # User-uploaded ERP datasets (CSV/Excel)
 ├── .env.example                   # Environment variable template
 ├── pyproject.toml                 # Python dependencies (uv)
 └── README.md
@@ -193,16 +187,7 @@ All agents inherit from `BaseAgent` which provides:
 
 ---
 
-## Mock Data
-
-The project includes a mock data generator (`backend/data_generator.py`) that creates realistic ERP datasets with:
-
-- **Sales data** (620 rows): 8 products, 4 regions, 12 sales reps, date range Oct 2025 - Feb 2026
-  - Includes intentional anomalies: 5 duplicate rows, 8 missing values, revenue spike day
-- **Inventory data** (344 rows): Stock level snapshots across 4 warehouses with reorder points
-- **Financial data** (250 rows): Revenue, COGS, Marketing, Payroll, Operations, R&D by department
-
-All mock data uses a fixed seed (`Faker.seed(42)`) for reproducibility.
+The project is designed to handle diverse ERP and business datasets. Users can upload their own CSV/Excel files directly through the Dashboard, which triggers the autonomous agentic pipeline.
 
 ---
 
@@ -211,16 +196,15 @@ All mock data uses a fixed seed (`Faker.seed(42)`) for reproducibility.
 - **Multi-Report Support** -- Dynamic pipelines for Sales, Inventory, and Financial datasets
 - **Truly Agentic** -- Agents use LLM reasoning to make decisions, not hardcoded logic
 - **Human-in-the-Loop** -- Workflow pauses for human approval before report generation
-- **Conversational BI (Chat with your Data)** -- Ask questions and get insights directly from reports using AI.
+- **Advanced Conversational BI (Chat with your Data)** -- Ask strategic questions and get data-driven growth advice directly from reports using AI. Features full Markdown formatting and comprehensive report context.
 - **Report Search & Archiving (RAG)** -- Semantic vector search across all historical reports using pgvector.
 - **Visual Workflow Scheduler UI** -- Manage, create, and monitor periodic workflow runs from the dashboard.
-- **Enhanced UX & Interface** -- Premium semantic Tailwind styling, perfect dark mode compatibility, and responsive design.
-- **Full Observability** -- Every agent execution logged with duration, tokens, and I/O summaries
-- **Multi-format Reports** -- Markdown for web/Slack, PDF for email/download
-- **Dynamic Slack Delivery** -- Full parsing of Markdown into Slack Block Kit natively
-- **Anomaly Detection Highlighting** -- AI autonomously flags and highlights critical anomalies in your data.
-- **Scheduled Automation** -- Configurable periodic runs via APScheduler
-- **Free Email Delivery** -- Uses Python's built-in smtplib (no paid services)
+- **Documentation Center** -- Integrated, LangChain-inspired documentation hub with sticky navigation and premium UX.
+- **Enhanced UX & Interface** -- Premium semantic Tailwind styling, perfect dark mode compatibility, and responsive layout with a bottom-dock mobile navigation.
+- **Full Observability** -- Every agent execution logged with duration, tokens, and I/O summaries.
+- **Dynamic Slack Delivery** -- Full parsing of Markdown into Slack Block Kit natively.
+- **Anomaly Detection Highlighting** -- AI autonomously flags and highlights critical anomalies in your data with proactive executive summaries.
+- **Scheduled Automation** -- Configurable periodic runs via APScheduler.
 
 ---
 
@@ -234,9 +218,11 @@ All mock data uses a fixed seed (`Faker.seed(42)`) for reproducibility.
 | Phase 4: API Layer | Done | REST endpoints for workflows, reports, approvals |
 | Phase 5: Delivery & Scheduling | Done | Slack/Email integration, APScheduler, Supabase Storage |
 | Phase 6: Frontend Dashboard | Done | Next.js dashboard with ShadCN UI |
-| Phase 7: Polish & Documentation | Done | Multi-report pipeline support, dynamic UI titles, final documentation |
+| Phase 7: Polish & Documentation | Done | Multi-report pipeline support, dynamic UI titles, initial documentation |
 | Phase 8: Manual Delivery Updates | Done | Native Slack block extraction and responsive mobile navigation |
-| Phase 9: Enterprise Upgrades | **Done** | Conversational BI, Visual Workflow Scheduler UI, Report RAG Search, Anomaly Highlighting, and fully Enhanced UX with semantic theming |
+| Phase 9: Enterprise Upgrades | Done | Conversational BI, Visual Workflow Scheduler UI, Report RAG Search, Anomaly Highlighting, and fully Enhanced UX with semantic theming |
+| Phase 10: UX Refinement | Done | Optimized Chat reasoning, formatted markdown output, and Documentation Center implementation |
+| Phase 11: Final Polish | Done | Workspace cleanup, preservation of user uploads, and documentation finalized |
 
 ---
 

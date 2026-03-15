@@ -52,13 +52,13 @@ async def get_report(report_id: str):
         
         # 1. Measurements from aggregation_agent
         agg_log = next((l for l in logs if l["agent_name"] == "aggregation_agent" and l["status"] == "completed"), None)
-        if agg_log and agg_log.get("output_data"):
-            report["measurements"] = agg_log["output_data"].get("aggregations", [])
+        if agg_log and agg_log.get("output_summary"):
+            report["measurements"] = agg_log["output_summary"].get("aggregations", [])
             
         # 2. Insights from analysis_agent
         ana_log = next((l for l in logs if l["agent_name"] == "analysis_agent" and l["status"] == "completed"), None)
-        if ana_log and ana_log.get("output_data"):
-            report["insights"] = ana_log["output_data"].get("insights", {})
+        if ana_log and ana_log.get("output_summary"):
+            report["insights"] = ana_log["output_summary"].get("insights", {})
             
     return report
 
@@ -105,8 +105,15 @@ async def chat_with_report(report_id: str, payload: Dict[str, Any]):
         
     try:
         agent = ChatAgent(db=db)
-        answer = await agent.chat(report, query, history)
-        return {"answer": answer}
+        result = await agent.execute(
+            run_id=report.get("run_id"),
+            input_data={
+                "report_data": report,
+                "user_query": query,
+                "chat_history": history
+            }
+        )
+        return {"answer": result["answer"]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

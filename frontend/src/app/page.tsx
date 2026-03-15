@@ -269,7 +269,7 @@ export default function DashboardPage() {
                       </Badge>
                     </div>
                   ))}
-                  <Button variant="ghost" size="sm" className="w-full text-xs text-muted-foreground group" render={
+                  <Button variant="ghost" size="sm" className="w-full text-xs text-muted-foreground group" nativeButton={false} render={
                     <a href="/runs" />
                   }>
                     View All Runs

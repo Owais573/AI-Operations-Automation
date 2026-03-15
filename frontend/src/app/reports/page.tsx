@@ -31,6 +31,9 @@ import {
   Send,
   User,
   Bot,
+  HelpCircle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import {
   BarChart,
@@ -67,6 +70,8 @@ export default function ReportsPage() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [isChatting, setIsChatting] = useState(false);
+  // Guide state
+  const [showGuide, setShowGuide] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   async function loadReports() {
@@ -198,6 +203,73 @@ export default function ReportsPage() {
         >
           {isSearching ? "Searching..." : "Search"}
         </Button>
+      </div>
+
+      {/* Quick Help Guide */}
+      <div className="rounded-xl border border-border bg-muted/20 overflow-hidden transition-all mt-6 shadow-sm">
+        <button 
+          onClick={() => setShowGuide(!showGuide)}
+          className="w-full flex items-center justify-between p-4 px-6 text-xs font-bold text-foreground uppercase tracking-widest hover:bg-muted/40 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <HelpCircle className="h-4 w-4 text-muted-foreground" />
+            Quick Help & Features Guide
+          </div>
+          {showGuide ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+        </button>
+        
+        {showGuide && (
+          <div className="p-6 pt-2 grid gap-8 md:grid-cols-2 lg:grid-cols-4 border-t border-border bg-muted/10">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-foreground">
+                <div className="h-6 w-6 rounded-md bg-foreground/5 flex items-center justify-center">
+                  <Eye className="h-3.5 w-3.5" />
+                </div>
+                <h4 className="text-[11px] font-bold uppercase tracking-tight">Semantic Search</h4>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-loose">
+                Uses AI to find reports by <span className="text-foreground font-medium">meaning</span> and content, not just titles. Try phrases like: <span className="italic">"inventory trends"</span> or <span className="italic">"high revenue products"</span>.
+              </p>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-foreground">
+                <div className="h-6 w-6 rounded-md bg-foreground/5 flex items-center justify-center">
+                  <Zap className="h-3.5 w-3.5" />
+                </div>
+                <h4 className="text-[11px] font-bold uppercase tracking-tight">AI Insights</h4>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-loose">
+                Click <span className="text-foreground font-medium">Preview</span> to instantly view automated executive summaries, 
+                <span className="text-foreground/80"> anomaly detection</span>, and actionable growth recommendations.
+              </p>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-foreground">
+                <div className="h-6 w-6 rounded-md bg-foreground/5 flex items-center justify-center">
+                  <MessageSquare className="h-3.5 w-3.5" />
+                </div>
+                <h4 className="text-[11px] font-bold uppercase tracking-tight">Conversational BI</h4>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-loose">
+                Use the <span className="text-foreground font-medium">Conversational BI</span> tab in preview to chat with your data. Ask: <span className="italic">"How can we improve business growth?"</span>
+              </p>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-foreground">
+                <div className="h-6 w-6 rounded-md bg-foreground/5 flex items-center justify-center">
+                  <Send className="h-3.5 w-3.5" />
+                </div>
+                <h4 className="text-[11px] font-bold uppercase tracking-tight">Deliver & Share</h4>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-loose">
+                Export professional <span className="text-foreground font-medium">PDFs</span> for offline use, or instantly <span className="text-foreground font-medium">Share to Slack</span> to keep your team up to date.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {reports.length === 0 && !loading ? (
@@ -426,7 +498,15 @@ export default function ReportsPage() {
                                       {msg.role === 'assistant' ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
                                     </div>
                                     <div className={`p-3 rounded-2xl max-w-[80%] text-sm shadow-sm ${msg.role === 'assistant' ? 'bg-muted/80 border border-border text-foreground/90' : 'bg-violet-600 text-white'}`}>
-                                      {msg.content}
+                                      {msg.role === 'assistant' ? (
+                                        <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-muted prose-headings:text-foreground prose-headings:font-bold prose-headings:mt-2 prose-headings:mb-1">
+                                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {msg.content}
+                                          </ReactMarkdown>
+                                        </div>
+                                      ) : (
+                                        msg.content
+                                      )}
                                     </div>
                                   </div>
                                 ))

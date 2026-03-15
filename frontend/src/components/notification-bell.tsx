@@ -88,7 +88,7 @@ export function NotificationBell() {
           </Button>
         }
       />
-      <PopoverContent className="w-80 p-0 overflow-hidden border-border bg-card shadow-2xl" align="end">
+      <PopoverContent className="w-80 p-0 overflow-hidden border-border bg-card shadow-2xl z-[100]" side="right" align="start" sideOffset={16}>
         <div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
           <h4 className="text-sm font-bold">Notifications</h4>
           <Badge variant="outline" className="text-[10px] uppercase font-bold px-1.5 py-0">

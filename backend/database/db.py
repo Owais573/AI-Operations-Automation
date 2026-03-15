@@ -179,7 +179,7 @@ class DatabaseClient:
                 # Call Supabase RPC for vector similarity
                 rpc_result = self.client.rpc("match_reports", {
                     "query_embedding": embedding,
-                    "match_threshold": 0.5,
+                    "match_threshold": 0.30,
                     "match_count": limit,
                 }).execute()
                 
@@ -191,12 +191,12 @@ class DatabaseClient:
             except Exception as e:
                 logger.warning(f"Vector search failed, falling back to keyword search: {e}")
 
-        # Keyword fallback
+        # Keyword fallback: Search in Title and Content Markdown
         if query:
             result = (
                 self.client.table("reports")
                 .select("*")
-                .ilike("title", f"%{query}%")
+                .or_(f"title.ilike.%{query}%,content_markdown.ilike.%{query}%")
                 .order("created_at", desc=True)
                 .limit(limit)
                 .execute()

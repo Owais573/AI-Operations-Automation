@@ -122,7 +122,8 @@ class IngestionAgent(BaseAgent):
 
         # ── 6. Convert DataFrame to list of dicts for pipeline ──
         # Replace NaN with None for JSON serialization
-        records = df.where(df.notnull(), None).to_dict(orient="records")
+        # Note: We cast to object type first to ensure None is preserved and not converted back to nan
+        records = df.astype(object).where(pd.notnull(df), None).to_dict(orient="records")
 
         return {
             "records": records,
