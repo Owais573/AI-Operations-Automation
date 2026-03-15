@@ -18,7 +18,9 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Data (regeneratable)
+# Uploads
+backend/data/uploads
+
 # data/*.csv
 
 # Build artifacts
@@ -33,3 +35,4 @@ out/
 
 # AI Planning Document
 AI Operations Automation MVP Plan.md
+
