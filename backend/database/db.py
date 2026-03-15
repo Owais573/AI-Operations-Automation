@@ -169,6 +169,42 @@ class DatabaseClient:
         )
         return result.data
 
+    async def search_reports(self, embedding: list[float] | None = None, query: str | None = None, limit: int = 10) -> list[dict]:
+        """
+        Search for reports using vector similarity (RAG) or keyword fallback.
+        Requires a 'match_reports' RPC function in Supabase for vector search.
+        """
+        if embedding:
+            try:
+                # Call Supabase RPC for vector similarity
+                rpc_result = self.client.rpc("match_reports", {
+                    "query_embedding": embedding,
+                    "match_threshold": 0.5,
+                    "match_count": limit,
+                }).execute()
+                
+                if rpc_result.data:
+                    # Enrich results with full report data
+                    report_ids = [r["report_id"] for r in rpc_result.data]
+                    data_result = self.client.table("reports").select("*").in_("id", report_ids).execute()
+                    return data_result.data
+            except Exception as e:
+                logger.warning(f"Vector search failed, falling back to keyword search: {e}")
+
+        # Keyword fallback
+        if query:
+            result = (
+                self.client.table("reports")
+                .select("*")
+                .ilike("title", f"%{query}%")
+                .order("created_at", desc=True)
+                .limit(limit)
+                .execute()
+            )
+            return result.data
+            
+        return []
+
     # ─── Approvals ───────────────────────────────────────────
 
     async def create_approval(
@@ -210,6 +246,32 @@ class DatabaseClient:
         """Get a single approval by ID."""
         result = self.client.table("approvals").select("*").eq("id", approval_id).single().execute()
         return result.data
+
+    # ─── Schedules ───────────────────────────────────────────
+
+    async def create_schedule(self, data: dict) -> dict:
+        """Create a new schedule record."""
+        result = self.client.table("schedules").insert(data).execute()
+        return result.data[0]
+
+    async def get_schedule(self, job_id: str) -> dict | None:
+        """Get a schedule by job_id."""
+        result = self.client.table("schedules").select("*").eq("job_id", job_id).maybe_single().execute()
+        return result.data
+
+    async def list_schedules(self) -> list[dict]:
+        """List all persistent schedules."""
+        result = self.client.table("schedules").select("*").order("created_at", desc=True).execute()
+        return result.data
+
+    async def delete_schedule(self, job_id: str) -> bool:
+        """Delete a schedule by job_id."""
+        try:
+            self.client.table("schedules").delete().eq("job_id", job_id).execute()
+            return True
+        except Exception as e:
+            logger.error(f"Error deleting schedule {job_id}: {e}")
+            return False
 
 
 # Singleton instance

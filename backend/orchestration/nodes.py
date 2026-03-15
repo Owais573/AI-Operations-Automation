@@ -9,6 +9,7 @@ from backend.agents.aggregation_agent import AggregationAgent
 from backend.agents.analysis_agent import AnalysisAgent
 from backend.agents.report_agent import ReportAgent
 from backend.agents.delivery_agent import DeliveryAgent
+from backend.agents.embedding_agent import EmbeddingAgent
 from backend.orchestration.state import WorkflowState
 from backend.utils.logger import get_logger
 
@@ -170,7 +171,7 @@ async def report_node(state: WorkflowState) -> Dict[str, Any]:
         if pdf_path and os.path.exists(pdf_path):
             pdf_size = os.path.getsize(pdf_path)
             
-        await db.create_report(
+        report_record = await db.create_report(
             run_id=state["run_id"],
             title=report_title,
             content_markdown=markdown_content,
@@ -178,6 +179,18 @@ async def report_node(state: WorkflowState) -> Dict[str, Any]:
             pdf_public_url=storage_result.get("public_url"),
             pdf_size=pdf_size
         )
+
+        # 4. Async index for RAG search
+        try:
+            embed_agent = EmbeddingAgent(db=db)
+            import asyncio
+            asyncio.create_task(embed_agent.index_report(
+                report_id=report_record["id"],
+                title=report_title,
+                content=markdown_content
+            ))
+        except Exception as e:
+            logger.warning(f"Indexing failed for report {report_record['id']}: {e}")
 
         return {
             "report": {

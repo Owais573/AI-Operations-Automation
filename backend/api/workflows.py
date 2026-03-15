@@ -1,6 +1,9 @@
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException, File, UploadFile, Form
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
+import os
+import shutil
+from uuid import uuid4
 
 from backend.database.db import get_db
 from backend.orchestration.workflow_graph import workflow_app
@@ -8,6 +11,9 @@ from backend.utils.logger import get_logger
 
 logger = get_logger("api.workflows")
 router = APIRouter(prefix="/api/workflows", tags=["Workflows"])
+
+UPLOAD_DIR = "data/uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 class WorkflowRunRequest(BaseModel):
@@ -18,7 +24,7 @@ class WorkflowRunRequest(BaseModel):
     slack_channel: Optional[str] = None
 
 
-async def run_workflow_background(run_id: str, request: WorkflowRunRequest):
+async def run_workflow_background(run_id: str, workflow_type: str, file_path: str):
     """Background task to execute the workflow graph up to the approval gate."""
     logger.info(f"Starting background workflow execution: {run_id}")
     db = get_db()
@@ -29,11 +35,11 @@ async def run_workflow_background(run_id: str, request: WorkflowRunRequest):
         
         initial_state = {
             "run_id": run_id,
-            "workflow_type": request.workflow_type,
-            "file_path": request.file_path,
-            "expected_columns": request.expected_columns or [],
-            "email_recipients": request.email_recipients or [],
-            "slack_channel": request.slack_channel,
+            "workflow_type": workflow_type,
+            "file_path": file_path,
+            "expected_columns": [], # Default for auto-discovery
+            "email_recipients": [], 
+            "slack_channel": None,
             "status": "pending",
             "needs_approval": False
         }
@@ -64,26 +70,42 @@ async def run_workflow_background(run_id: str, request: WorkflowRunRequest):
 
 
 @router.post("/run", response_model=Dict[str, Any])
-async def trigger_workflow(request: WorkflowRunRequest, background_tasks: BackgroundTasks):
-    """Trigger a new workflow run and execute in the background."""
+async def trigger_workflow(
+    background_tasks: BackgroundTasks,
+    workflow_type: str = Form(...),
+    file: UploadFile = File(...)
+):
+    """Trigger a new workflow run with an uploaded file."""
     db = get_db()
     try:
+        # Save file
+        file_ext = os.path.splitext(file.filename)[1]
+        unique_filename = f"{uuid4()}{file_ext}"
+        file_path = os.path.join(UPLOAD_DIR, unique_filename)
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # Create run record
         run_record = await db.create_workflow_run(
-            workflow_type=request.workflow_type,
-            input_config=request.model_dump()
+            workflow_type=workflow_type,
+            input_config={"file_name": file.filename, "file_path": file_path}
         )
         run_id = run_record["id"]
         
         # Add background task
-        background_tasks.add_task(run_workflow_background, run_id, request)
+        background_tasks.add_task(run_workflow_background, run_id, workflow_type, file_path)
         
         return {
             "message": "Workflow started successfully",
             "run_id": run_id,
-            "status": "running"
+            "status": "running",
+            "file_name": file.filename
         }
     except Exception as e:
         logger.error(f"Error starting workflow: {e}")
+        if 'file_path' in locals() and os.path.exists(file_path):
+            os.remove(file_path)
         raise HTTPException(status_code=500, detail=str(e))
 
 

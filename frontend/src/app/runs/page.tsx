@@ -84,8 +84,8 @@ export default function RunsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Workflow Runs</h1>
-          <p className="text-sm text-zinc-500">
+          <h1 className="text-2xl font-bold">Workflow Runs</h1>
+          <p className="text-sm text-muted-foreground">
             History of all workflow executions
           </p>
         </div>
@@ -107,8 +107,8 @@ export default function RunsPage() {
             onClick={() => setFilter(opt)}
             className={
               filter === opt
-                ? "bg-violet-600 hover:bg-violet-500"
-                : "border-white/10"
+                ? "bg-violet-600 hover:bg-violet-700 text-white"
+                : ""
             }
           >
             {opt === "all" ? "All" : opt.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
@@ -117,16 +117,16 @@ export default function RunsPage() {
       </div>
 
       {/* Table */}
-      <Card className="border-white/10 bg-zinc-900/50 backdrop-blur">
+      <Card className="border-border bg-card/50 backdrop-blur shadow-sm overflow-hidden">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow className="border-white/10 hover:bg-transparent">
-                <TableHead className="text-zinc-400">Type</TableHead>
-                <TableHead className="text-zinc-400">Status</TableHead>
-                <TableHead className="text-zinc-400">Created</TableHead>
-                <TableHead className="text-zinc-400">Error</TableHead>
-                <TableHead className="text-zinc-400 text-right">
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="text-muted-foreground">Type</TableHead>
+                <TableHead className="text-muted-foreground">Status</TableHead>
+                <TableHead className="text-muted-foreground">Created</TableHead>
+                <TableHead className="text-muted-foreground">Error</TableHead>
+                <TableHead className="text-muted-foreground text-right">
                   Actions
                 </TableHead>
               </TableRow>
@@ -142,9 +142,9 @@ export default function RunsPage() {
                 filteredRuns.map((run) => (
                   <TableRow
                     key={run.id}
-                    className="border-white/5 hover:bg-white/5"
+                    className="hover:bg-muted/50 transition-colors"
                   >
-                    <TableCell className="font-medium text-zinc-200">
+                    <TableCell className="font-medium">
                       {run.workflow_type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
                     </TableCell>
                     <TableCell>
@@ -157,7 +157,7 @@ export default function RunsPage() {
                         {run.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-zinc-400">
+                    <TableCell className="text-muted-foreground">
                       {new Date(run.created_at).toLocaleString()}
                     </TableCell>
                     <TableCell className="max-w-[200px] truncate text-red-400 text-xs">
@@ -189,10 +189,10 @@ export default function RunsPage() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!runToDelete} onOpenChange={(open) => !open && setRunToDelete(null)}>
-        <DialogContent className="border-white/10 bg-zinc-950 text-white sm:max-w-md">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Delete Workflow Run</DialogTitle>
-            <DialogDescription className="text-zinc-400">
+            <DialogDescription>
               Are you sure you want to delete this workflow run? This action cannot be undone and will delete all associated logs and reports.
             </DialogDescription>
           </DialogHeader>
@@ -201,7 +201,7 @@ export default function RunsPage() {
               type="button"
               variant="outline"
               onClick={() => setRunToDelete(null)}
-              className="border-white/10"
+              className="border-border"
               disabled={deletingId !== null}
             >
               Cancel

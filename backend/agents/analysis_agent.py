@@ -20,6 +20,10 @@ from backend.database.db import DatabaseClient
 ANALYSIS_SYSTEM_PROMPT = """You are a senior business intelligence analyst for an enterprise operations team.
 Analyze the provided business data and metrics to generate strategic insights.
 
+### AUTONOMOUS SCHEMA DISCOVERY
+You have the ability to notice "Extra Columns" or "Hidden Dimensions" in the data quality reports. 
+Even if a metric wasn't explicitly aggregated, if you see high-cardinality flags or unusual column names (e.g., 'DiscountCode', 'ReturnReason', 'MarketingChannel'), incorporate them into your findings as potential drivers of the observed performance.
+
 The data could be about SALES, INVENTORY, FINANCE, or other operational areas. 
 Adapt your reasoning based on the metrics provided.
 
@@ -31,9 +35,9 @@ Respond with this exact JSON structure:
     "key_findings": [
         {
             "finding": "Brief description of the finding",
-            "category": "trend" | "anomaly" | "opportunity" | "risk",
+            "category": "trend" | "anomaly" | "opportunity" | "risk" | "discovery",
             "impact": "high" | "medium" | "low",
-            "details": "Detailed explanation with specific numbers and metrics",
+            "details": "Detailed explanation with specific numbers and metrics. Include any discovered columns here.",
             "recommendation": "Actionable recommendation"
         }
     ],
@@ -59,7 +63,7 @@ Respond with this exact JSON structure:
         }
     ],
     "confidence_score": 0.0-1.0,
-    "data_quality_notes": "Any concerns about data reliability"
+    "data_quality_notes": "Include notes on any unexpected schema columns discoverd."
 }
 
 Analysis Rules:
@@ -68,6 +72,7 @@ Analysis Rules:
 - Identify correlations between different dimensions (e.g., regions/departments/warehouses).
 - Provide actionable, business-oriented recommendations.
 - Focus on performance, efficiency, and risk highlights.
+- Actively highlight any columns in the 'Extra/Unexpected' section that seem significant.
 """
 
 
@@ -114,6 +119,20 @@ class AnalysisAgent(BaseAgent):
             lines.append(f"  {key}: {value}")
         lines.append("")
 
+        # Schema Discovery (The "Extra" Columns)
+        metadata = input_data.get("metadata", {})
+        if metadata:
+            all_cols = metadata.get("columns", [])
+            lines.append("--- SCHEMA DISCOVERY (ALL COLUMNS) ---")
+            lines.append(f"  Available Dimensions/Measures: {', '.join(all_cols)}")
+            
+            # Highlight non-standard columns
+            std_cols = ["date", "product", "region", "revenue", "cost", "quantity", "category", "department", "sku", "price"]
+            extra = [c for c in all_cols if not any(s in c.toLowerCase() for s in std_cols)]
+            if extra:
+                lines.append(f"  Unexpected/Custom Columns Found: {', '.join(extra)}")
+            lines.append("")
+
         # Time series
         time_series = input_data.get("time_series", [])
         if time_series:
@@ -140,16 +159,6 @@ class AnalysisAgent(BaseAgent):
                     parts = [f"{k}: {v}" for k, v in item.items()]
                     lines.append("  " + " | ".join(parts))
                 lines.append("")
-
-        # Top performers
-        top = input_data.get("top_performers", {})
-        if top:
-            lines.append("--- TOP PERFORMERS & LEADERS ---")
-            for category, items in top.items():
-                lines.append(f"  {category}:")
-                for item in items:
-                    lines.append(f"    {item}")
-            lines.append("")
 
         # Cleaning report context
         cleaning = input_data.get("cleaning_report", {})

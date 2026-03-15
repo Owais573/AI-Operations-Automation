@@ -23,6 +23,7 @@ dependencies = [
     "markdown>=3.7",
     "faker>=33.0.0",
     "xhtml2pdf>=0.2.17",
+    "python-multipart>=0.0.22",
 ]
 
 [dependency-groups]

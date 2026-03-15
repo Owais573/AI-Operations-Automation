@@ -211,9 +211,14 @@ All mock data uses a fixed seed (`Faker.seed(42)`) for reproducibility.
 - **Multi-Report Support** -- Dynamic pipelines for Sales, Inventory, and Financial datasets
 - **Truly Agentic** -- Agents use LLM reasoning to make decisions, not hardcoded logic
 - **Human-in-the-Loop** -- Workflow pauses for human approval before report generation
+- **Conversational BI (Chat with your Data)** -- Ask questions and get insights directly from reports using AI.
+- **Report Search & Archiving (RAG)** -- Semantic vector search across all historical reports using pgvector.
+- **Visual Workflow Scheduler UI** -- Manage, create, and monitor periodic workflow runs from the dashboard.
+- **Enhanced UX & Interface** -- Premium semantic Tailwind styling, perfect dark mode compatibility, and responsive design.
 - **Full Observability** -- Every agent execution logged with duration, tokens, and I/O summaries
 - **Multi-format Reports** -- Markdown for web/Slack, PDF for email/download
 - **Dynamic Slack Delivery** -- Full parsing of Markdown into Slack Block Kit natively
+- **Anomaly Detection Highlighting** -- AI autonomously flags and highlights critical anomalies in your data.
 - **Scheduled Automation** -- Configurable periodic runs via APScheduler
 - **Free Email Delivery** -- Uses Python's built-in smtplib (no paid services)
 
@@ -231,6 +236,7 @@ All mock data uses a fixed seed (`Faker.seed(42)`) for reproducibility.
 | Phase 6: Frontend Dashboard | Done | Next.js dashboard with ShadCN UI |
 | Phase 7: Polish & Documentation | Done | Multi-report pipeline support, dynamic UI titles, final documentation |
 | Phase 8: Manual Delivery Updates | Done | Native Slack block extraction and responsive mobile navigation |
+| Phase 9: Enterprise Upgrades | **Done** | Conversational BI, Visual Workflow Scheduler UI, Report RAG Search, Anomaly Highlighting, and fully Enhanced UX with semantic theming |
 
 ---
 

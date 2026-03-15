@@ -33,11 +33,51 @@ def get_scheduler() -> AsyncIOScheduler:
 
 
 def start_scheduler():
-    """Start the scheduler if not already running."""
+    """Start the scheduler if not already running and sync jobs from DB."""
     scheduler = get_scheduler()
     if not scheduler.running:
         scheduler.start()
         logger.info("APScheduler started.")
+        
+        # Initial sync from DB
+        import asyncio
+        asyncio.create_task(sync_schedules_from_db())
+
+
+async def sync_schedules_from_db():
+    """Load all schedules from Supabase and add them to APScheduler."""
+    logger.info("Syncing schedules from database...")
+    db = get_db()
+    try:
+        schedules = await db.list_schedules()
+        for s in schedules:
+            job_id = s["job_id"]
+            if s["trigger_type"] == "interval":
+                # trigger_value for interval is "hours"
+                add_interval_schedule(
+                    job_id=job_id,
+                    workflow_type=s["workflow_type"],
+                    file_path=s["file_path"],
+                    hours=int(s["trigger_value"]),
+                    expected_columns=s.get("expected_columns"),
+                    email_recipients=s.get("email_recipients"),
+                    slack_channel=s.get("slack_channel"),
+                    persist=False  # Avoid circular save
+                )
+            elif s["trigger_type"] == "cron":
+                add_cron_schedule(
+                    job_id=job_id,
+                    workflow_type=s["workflow_type"],
+                    file_path=s["file_path"],
+                    cron_expression=s["trigger_value"],
+                    expected_columns=s.get("expected_columns"),
+                    email_recipients=s.get("email_recipients"),
+                    slack_channel=s.get("slack_channel"),
+                    persist=False  # Avoid circular save
+                )
+        logger.info(f"Synced {len(schedules)} schedules from DB.")
+    except Exception as e:
+        logger.error(f"Failed to sync schedules from DB: {e}")
 
 
 def shutdown_scheduler():
@@ -123,8 +163,9 @@ def add_interval_schedule(
     expected_columns: list[str] | None = None,
     email_recipients: list[str] | None = None,
     slack_channel: str | None = None,
+    persist: bool = True,
 ) -> Dict[str, Any]:
-    """Add an interval-based recurring schedule (e.g., every 24 hours)."""
+    """Add an interval-based recurring schedule."""
     scheduler = get_scheduler()
 
     trigger = IntervalTrigger(hours=hours, minutes=minutes)
@@ -141,6 +182,21 @@ def add_interval_schedule(
             "slack_channel": slack_channel,
         },
     )
+    
+    if persist:
+        import asyncio
+        db = get_db()
+        asyncio.create_task(db.create_schedule({
+            "job_id": job_id,
+            "workflow_type": workflow_type,
+            "file_path": file_path,
+            "trigger_type": "interval",
+            "trigger_value": str(hours),
+            "expected_columns": expected_columns or [],
+            "email_recipients": email_recipients or [],
+            "slack_channel": slack_channel
+        }))
+
     logger.info(f"Added interval schedule: {job_id} (every {hours}h {minutes}m)")
     return {"job_id": job_id, "type": "interval", "hours": hours, "minutes": minutes}
 
@@ -153,13 +209,9 @@ def add_cron_schedule(
     expected_columns: list[str] | None = None,
     email_recipients: list[str] | None = None,
     slack_channel: str | None = None,
+    persist: bool = True,
 ) -> Dict[str, Any]:
-    """
-    Add a cron-based schedule.
-
-    Example cron_expression: "0 8 * * MON-FRI"  (8 AM weekdays)
-    APScheduler CronTrigger accepts: minute, hour, day, month, day_of_week
-    """
+    """Add a cron-based schedule."""
     scheduler = get_scheduler()
 
     # Parse cron expression: "min hour day month day_of_week"
@@ -188,16 +240,37 @@ def add_cron_schedule(
             "slack_channel": slack_channel,
         },
     )
+
+    if persist:
+        import asyncio
+        db = get_db()
+        asyncio.create_task(db.create_schedule({
+            "job_id": job_id,
+            "workflow_type": workflow_type,
+            "file_path": file_path,
+            "trigger_type": "cron",
+            "trigger_value": cron_expression,
+            "expected_columns": expected_columns or [],
+            "email_recipients": email_recipients or [],
+            "slack_channel": slack_channel
+        }))
+
     logger.info(f"Added cron schedule: {job_id} ({cron_expression})")
     return {"job_id": job_id, "type": "cron", "cron_expression": cron_expression}
 
 
 def remove_schedule(job_id: str) -> bool:
-    """Remove a scheduled job by ID."""
+    """Remove a scheduled job by ID from memory and DB."""
     scheduler = get_scheduler()
     job = scheduler.get_job(job_id)
     if job:
         scheduler.remove_job(job_id)
+        
+        # Async delete from DB
+        import asyncio
+        db = get_db()
+        asyncio.create_task(db.delete_schedule(job_id))
+        
         logger.info(f"Removed schedule: {job_id}")
         return True
     return False

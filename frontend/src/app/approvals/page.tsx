@@ -111,8 +111,8 @@ export default function ApprovalsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Approval Queue</h1>
-          <p className="text-sm text-zinc-500">
+          <h1 className="text-2xl font-bold">Approval Queue</h1>
+          <p className="text-sm text-muted-foreground">
             Review AI analysis before final report generation
           </p>
         </div>
@@ -123,11 +123,11 @@ export default function ApprovalsPage() {
       </div>
 
       {approvals.length === 0 && !loading ? (
-        <Card className="border-white/10 bg-zinc-900/50 backdrop-blur">
+        <Card className="border-border bg-card/50 backdrop-blur shadow-sm">
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <ShieldCheck className="h-12 w-12 text-zinc-600 mb-4" />
-            <p className="text-zinc-500">No pending approvals</p>
-            <p className="text-xs text-zinc-600 mt-1">
+            <ShieldCheck className="h-12 w-12 text-muted-foreground/30 mb-4" />
+            <p className="text-muted-foreground">No pending approvals</p>
+            <p className="text-xs text-muted-foreground/50 mt-1">
               All workflows have been reviewed
             </p>
           </CardContent>
@@ -143,18 +143,18 @@ export default function ApprovalsPage() {
             return (
               <Card
                 key={approval.id}
-                className="border-white/10 bg-zinc-900/50 backdrop-blur"
+                className="border-border bg-card/50 backdrop-blur shadow-sm"
               >
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-base text-white">
+                      <CardTitle className="text-base">
                         {approval.workflow_runs?.workflow_type
                           ?.replace(/_/g, " ")
                           .replace(/\b\w/g, (c: string) => c.toUpperCase()) ||
                           "Workflow Approval"}
                       </CardTitle>
-                      <p className="text-xs text-zinc-500 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         Checkpoint: {approval.checkpoint_name} ·{" "}
                         {new Date(approval.created_at).toLocaleString()}
                       </p>
@@ -169,23 +169,23 @@ export default function ApprovalsPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Executive Summary */}
-                  <div className="rounded-lg border border-white/5 bg-zinc-900 p-4">
-                    <h4 className="text-xs font-semibold uppercase text-zinc-500 mb-2">
+                  <div className="rounded-lg border border-border bg-muted/30 p-4">
+                    <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2">
                       Executive Summary
                     </h4>
-                    <p className="text-sm text-zinc-300">{summary}</p>
+                    <p className="text-sm text-foreground/80">{summary}</p>
                   </div>
 
                   {/* Key Findings Preview */}
                   {findings.length > 0 && (
-                    <div className="rounded-lg border border-white/5 bg-zinc-900 p-4">
-                      <h4 className="text-xs font-semibold uppercase text-zinc-500 mb-2">
+                    <div className="rounded-lg border border-border bg-muted/30 p-4">
+                      <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2">
                         Key Findings ({findings.length})
                       </h4>
                       <ul className="space-y-1">
                         {(findings as Record<string, string>[]).slice(0, 3).map(
                           (f, i) => (
-                            <li key={i} className="text-sm text-zinc-400">
+                            <li key={i} className="text-sm text-muted-foreground/80">
                               • {f.finding || JSON.stringify(f)}
                             </li>
                           )
@@ -196,17 +196,17 @@ export default function ApprovalsPage() {
 
                   {/* Full Data Preview */}
                   <Dialog>
-                    <DialogTrigger render={<Button variant="outline" size="sm" className="border-white/10" />}>
+                    <DialogTrigger render={<Button variant="outline" size="sm" className="border-border shadow-sm" />}>
                       <Eye className="mr-2 h-4 w-4" />
                       View Full Analysis
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-3xl md:max-w-4xl max-h-[80vh] w-[90vw] overflow-y-auto bg-zinc-950 border-white/10 p-6">
+                    <DialogContent className="sm:max-w-3xl md:max-w-4xl max-h-[80vh] w-[90vw] overflow-y-auto bg-background border-border p-6 shadow-2xl">
                       <DialogHeader>
-                        <DialogTitle className="text-white">
+                        <DialogTitle>
                           Full Analysis Data
                         </DialogTitle>
                       </DialogHeader>
-                      <pre className="mt-4 text-sm text-zinc-400 whitespace-pre-wrap">
+                      <pre className="mt-4 text-sm text-muted-foreground whitespace-pre-wrap bg-muted/50 p-4 rounded-lg border border-border">
                         {JSON.stringify(approval.data_snapshot, null, 2)}
                       </pre>
                     </DialogContent>
@@ -222,7 +222,7 @@ export default function ApprovalsPage() {
                         [approval.id]: e.target.value,
                       }))
                     }
-                    className="border-white/10 bg-zinc-900 text-zinc-200 placeholder:text-zinc-600"
+                    className="border-input bg-muted/20 text-foreground placeholder:text-muted-foreground/60"
                   />
 
                   {/* Action Buttons */}

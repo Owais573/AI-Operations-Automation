@@ -4,68 +4,51 @@ import { useEffect, useState } from "react";
 import {
   fetchDashboardStats,
   fetchDashboardActivity,
-  triggerWorkflow,
+  uploadWorkflowFile,
   type DashboardStats,
   type ActivityItem,
 } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { FileUpload } from "@/components/file-upload";
 import {
   RefreshCw,
   BarChart3,
   Box,
   TrendingUp,
-  ChevronDown,
   Play,
   CheckCircle2,
-  XCircle,
   Clock,
   FileText,
   ShieldCheck,
+  Zap,
+  ArrowUpRight,
 } from "lucide-react";
+import { toast } from "sonner";
 
-const REPORT_CONFIGS: Record<string, { label: string; type: string; path: string; icon: any; color: string }> = {
-  sales: {
-    label: "Sales Report",
-    type: "sales_report",
-    path: "f:/Antigravity/AI Operations Automation/data/mock_sales_data.csv",
-    icon: TrendingUp,
-    color: "text-blue-400",
-  },
-  inventory: {
-    label: "Inventory Report",
-    type: "inventory_report",
-    path: "f:/Antigravity/AI Operations Automation/data/mock_inventory_data.csv",
-    icon: Box,
-    color: "text-emerald-400",
-  },
-  finance: {
-    label: "Financial Report",
-    type: "financial_report",
-    path: "f:/Antigravity/AI Operations Automation/data/mock_financial_data.csv",
-    icon: BarChart3,
-    color: "text-amber-400",
-  },
-};
+const REPORT_TYPES = [
+  { id: "sales_report", label: "Sales Analysis", icon: TrendingUp, color: "text-blue-500", bgColor: "bg-blue-500/10" },
+  { id: "inventory_report", label: "Inventory Audit", icon: Box, color: "text-emerald-500", bgColor: "bg-emerald-500/10" },
+  { id: "financial_report", label: "Financial Audit", icon: BarChart3, color: "text-amber-500", bgColor: "bg-amber-500/10" },
+];
 
 const statusColor: Record<string, string> = {
-  completed: "bg-emerald-500/20 text-emerald-400",
-  running: "bg-blue-500/20 text-blue-400",
-  failed: "bg-red-500/20 text-red-400",
-  pending: "bg-amber-500/20 text-amber-400",
-  awaiting_approval: "bg-violet-500/20 text-violet-400",
+  completed: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+  running: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  failed: "bg-red-500/10 text-red-500 border-red-500/20",
+  pending: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+  awaiting_approval: "bg-violet-500/10 text-violet-500 border-violet-500/20",
 };
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
-   const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [triggering, setTriggering] = useState(false);
-  const [selectedReport, setSelectedReport] = useState("sales");
+  const [selectedReport, setSelectedReport] = useState("sales_report");
 
   async function loadData() {
-    setLoading(true);
     try {
       const [s, a] = await Promise.all([
         fetchDashboardStats(),
@@ -82,21 +65,22 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 15000);
+    const interval = setInterval(loadData, 10000);
     return () => clearInterval(interval);
   }, []);
 
-   async function handleQuickRun() {
+  async function handleFileUpload(file: File) {
     setTriggering(true);
-    const config = REPORT_CONFIGS[selectedReport];
     try {
-      await triggerWorkflow({
-        workflow_type: config.type,
-        file_path: config.path,
+      await uploadWorkflowFile(file, selectedReport);
+      toast.success("Workflow Started", {
+        description: `Successfully uploaded ${file.name}. View progress in 'Runs'.`,
       });
-      setTimeout(loadData, 2000);
+      loadData();
     } catch (err) {
-      console.error("Failed to trigger workflow:", err);
+      toast.error("Upload Failed", {
+        description: err instanceof Error ? err.message : "Could not start workflow",
+      });
     } finally {
       setTriggering(false);
     }
@@ -105,154 +89,198 @@ export default function DashboardPage() {
   if (loading && !stats) {
     return (
       <div className="flex h-[80vh] items-center justify-center">
-        <RefreshCw className="h-6 w-6 animate-spin text-violet-400" />
+        <RefreshCw className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 max-w-7xl mx-auto pb-10">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="text-sm text-zinc-500">
-            Real-time overview of your AI automation pipeline
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-extrabold tracking-tight">Operations Dashboard</h1>
+          <p className="text-muted-foreground">
+            Monitor and trigger your autonomous operational agent pipelines
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative group">
-            <select
-              value={selectedReport}
-              onChange={(e) => setSelectedReport(e.target.value)}
-              className="appearance-none bg-zinc-900 border border-white/10 text-zinc-300 text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 block w-44 px-4 py-2 pr-10 hover:bg-zinc-800 transition-colors cursor-pointer"
-            >
-              {Object.entries(REPORT_CONFIGS).map(([key, config]) => (
-                <option key={key} value={key}>
-                  {config.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 pointer-events-none" />
+        <div className="flex items-center gap-4 bg-card border px-4 py-2 rounded-xl shadow-sm">
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">System Live</span>
           </div>
-
-          <Button
-            onClick={handleQuickRun}
-            disabled={triggering}
-            className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 shadow-lg shadow-violet-500/20"
-          >
-            {triggering ? (
-              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Play className="mr-2 h-4 w-4" />
-            )}
-            Run Now
-          </Button>
+          <div className="h-4 w-[1px] bg-border" />
+          <p className="text-xs font-medium text-muted-foreground">
+            {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
+          </p>
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards Section */}
       {stats && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-white/10 bg-zinc-900/50 backdrop-blur">
+          <Card className="border-border/50 bg-card/50 backdrop-blur hover:shadow-md transition-all">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-zinc-400">
-                Total Runs
-              </CardTitle>
-              <Play className="h-4 w-4 text-violet-400" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Runs</CardTitle>
+              <Play className="h-4 w-4 text-violet-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-white">
-                {stats.total_runs}
-              </div>
+              <div className="text-3xl font-bold">{stats.total_runs}</div>
+              <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-tighter">Lifetime Executions</p>
             </CardContent>
           </Card>
 
-          <Card className="border-white/10 bg-zinc-900/50 backdrop-blur">
+          <Card className="border-border/50 bg-card/50 backdrop-blur hover:shadow-md transition-all">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-zinc-400">
-                Success Rate
-              </CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Success Rate</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-white">
-                {stats.success_rate_percentage}%
-              </div>
-              <p className="text-xs text-zinc-500 mt-1">
-                {stats.successful_runs} succeeded · {stats.failed_runs} failed
+              <div className="text-3xl font-bold text-emerald-500">{stats.success_rate_percentage}%</div>
+              <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-tighter">
+                {stats.successful_runs} Succeeded · {stats.failed_runs} Failed
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-white/10 bg-zinc-900/50 backdrop-blur">
+          <Card className="border-border/50 bg-card/50 backdrop-blur hover:shadow-md transition-all">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-zinc-400">
-                Reports Generated
-              </CardTitle>
-              <FileText className="h-4 w-4 text-blue-400" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Reports Generated</CardTitle>
+              <FileText className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-white">
-                {stats.total_reports_generated}
-              </div>
+              <div className="text-3xl font-bold">{stats.total_reports_generated}</div>
+              <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-tighter">Verified Insights</p>
             </CardContent>
           </Card>
 
-          <Card className="border-white/10 bg-zinc-900/50 backdrop-blur">
+          <Card className="border-border/50 bg-card/50 backdrop-blur hover:shadow-md transition-all">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-zinc-400">
-                Pending Approvals
-              </CardTitle>
-              <ShieldCheck className="h-4 w-4 text-amber-400" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Awaiting Human</CardTitle>
+              <ShieldCheck className="h-4 w-4 text-amber-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-white">
-                {stats.pending_human_approvals}
-              </div>
+              <div className="text-3xl font-bold">{stats.pending_human_approvals}</div>
+              <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-tighter">In Approval Queue</p>
             </CardContent>
           </Card>
         </div>
       )}
 
-      {/* Recent Activity */}
-      <Card className="border-white/10 bg-zinc-900/50 backdrop-blur">
-        <CardHeader>
-          <CardTitle className="text-lg text-white">Recent Activity</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {activity.length === 0 ? (
-            <p className="text-sm text-zinc-500">No recent activity</p>
-          ) : (
-            <div className="space-y-3">
-              {activity.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between rounded-lg border border-white/5 bg-zinc-900 px-4 py-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <Clock className="h-4 w-4 text-zinc-500" />
-                    <div>
-                      <p className="text-sm font-medium text-zinc-200">
-                        {item.workflow_type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                      </p>
-                      <p className="text-xs text-zinc-500">
-                        {new Date(item.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge
-                    variant="secondary"
-                    className={statusColor[item.status] || "bg-zinc-700 text-zinc-300"}
-                  >
-                    {item.status}
-                  </Badge>
+      {/* Main Grid: Upload & Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left: Trigger Section */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="border-none bg-card shadow-lg overflow-hidden ring-1 ring-border/50">
+            <div className="h-1.5 w-full bg-gradient-to-r from-primary to-violet-500" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-primary" />
+                Trigger New Workflow
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">Start an AI-driven data analysis pipeline</p>
+            </CardHeader>
+            <CardContent className="space-y-8">
+              <div className="space-y-4">
+                <label className="text-sm font-bold flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">1</span>
+                  Select Report Type
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {REPORT_TYPES.map((type) => {
+                    const Icon = type.icon;
+                    const isActive = selectedReport === type.id;
+                    return (
+                      <button
+                        key={type.id}
+                        onClick={() => setSelectedReport(type.id)}
+                        className={`group relative flex flex-col items-center gap-4 p-5 rounded-2xl border-2 transition-all duration-300
+                          ${isActive 
+                            ? "border-primary bg-primary/5 shadow-sm scale-[1.02]" 
+                            : "border-border hover:border-primary/30 hover:bg-muted/50"}
+                        `}
+                      >
+                        <div className={`p-3 rounded-xl transition-colors ${isActive ? type.bgColor : "bg-muted"}`}>
+                          <Icon className={`h-6 w-6 ${isActive ? type.color : "text-muted-foreground"}`} />
+                        </div>
+                        <span className={`text-xs font-bold ${isActive ? "text-foreground" : "text-muted-foreground"}`}>
+                          {type.label}
+                        </span>
+                        {isActive && (
+                          <div className="absolute top-2 right-2">
+                             <CheckCircle2 className="h-4 w-4 text-primary" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              </div>
+
+              <div className="space-y-4">
+                <label className="text-sm font-bold flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">2</span>
+                  Upload Dataset
+                </label>
+                <FileUpload 
+                  onUpload={handleFileUpload} 
+                  isUploading={triggering} 
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right: Recent Activity */}
+        <div className="space-y-6">
+          <Card className="border-border/50 shadow-md h-full flex flex-col">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg font-bold">Recent Activity</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="flex-1 overflow-y-auto">
+              {activity.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 text-center space-y-2">
+                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                    <Clock className="h-5 w-5 text-muted-foreground/50" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">No recent activity detected.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {activity.slice(0, 8).map((item) => (
+                    <div
+                      key={item.id}
+                      className="group flex items-start justify-between gap-4 p-3 rounded-xl border border-border/50 bg-muted/30 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex gap-3">
+                         <div className={`mt-1 h-2 w-2 rounded-full ${item.status === 'completed' ? 'bg-emerald-500' : item.status === 'failed' ? 'bg-red-500' : 'bg-blue-500 animate-pulse'}`} />
+                         <div className="space-y-0.5">
+                            <p className="text-xs font-bold truncate max-w-[120px]">
+                              {item.workflow_type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                         </div>
+                      </div>
+                      <Badge variant="outline" className={`text-[10px] uppercase font-bold px-1.5 py-0 ${statusColor[item.status]}`}>
+                        {item.status.replace(/_/g, " ")}
+                      </Badge>
+                    </div>
+                  ))}
+                  <Button variant="ghost" size="sm" className="w-full text-xs text-muted-foreground group" render={
+                    <a href="/runs" />
+                  }>
+                    View All Runs
+                    <ArrowUpRight className="ml-1 h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

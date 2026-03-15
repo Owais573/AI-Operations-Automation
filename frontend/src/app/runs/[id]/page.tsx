@@ -75,7 +75,7 @@ export default function RunDetailPage() {
   if (loading || !data) {
     return (
       <div className="flex h-[80vh] items-center justify-center">
-        <RefreshCw className="h-6 w-6 animate-spin text-violet-400" />
+        <RefreshCw className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
@@ -93,14 +93,14 @@ export default function RunDetailPage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-white">
+          <h1 className="text-2xl font-bold text-foreground">
             {run.workflow_type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
           </h1>
-          <p className="text-xs text-zinc-500 font-mono">{run.id}</p>
+          <p className="text-xs text-muted-foreground font-mono">{run.id}</p>
         </div>
         <Badge
           variant="secondary"
-          className={statusColor[run.status] || "bg-zinc-700 text-zinc-300"}
+          className={statusColor[run.status] || "bg-muted text-muted-foreground"}
         >
           {run.status}
         </Badge>
@@ -111,7 +111,7 @@ export default function RunDetailPage() {
             size="sm" 
             onClick={() => setShowDeleteDialog(true)} 
             disabled={deleting || loading}
-            className="bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/20"
+            className="bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20"
           >
             <Trash2 className={`mr-2 h-4 w-4 ${deleting ? "animate-pulse" : ""}`} />
             {deleting ? "Deleting..." : "Delete Run"}
@@ -120,30 +120,30 @@ export default function RunDetailPage() {
       </div>
 
       {/* Run Info */}
-      <Card className="border-white/10 bg-zinc-900/50 backdrop-blur">
+      <Card className="border-border/50 bg-card/50 backdrop-blur">
         <CardHeader>
-          <CardTitle className="text-lg text-white">Run Details</CardTitle>
+          <CardTitle className="text-lg text-foreground">Run Details</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <div>
-            <p className="text-xs text-zinc-500">Status</p>
-            <p className="text-sm font-medium text-zinc-200">{run.status}</p>
+            <p className="text-xs text-muted-foreground">Status</p>
+            <p className="text-sm font-medium text-foreground">{run.status}</p>
           </div>
           <div>
-            <p className="text-xs text-zinc-500">Created</p>
-            <p className="text-sm font-medium text-zinc-200">
+            <p className="text-xs text-muted-foreground">Created</p>
+            <p className="text-sm font-medium text-foreground">
               {new Date(run.created_at).toLocaleString()}
             </p>
           </div>
           <div>
-            <p className="text-xs text-zinc-500">Started</p>
-            <p className="text-sm font-medium text-zinc-200">
+            <p className="text-xs text-muted-foreground">Started</p>
+            <p className="text-sm font-medium text-foreground">
               {run.started_at ? new Date(run.started_at).toLocaleString() : "—"}
             </p>
           </div>
           <div>
-            <p className="text-xs text-zinc-500">Completed</p>
-            <p className="text-sm font-medium text-zinc-200">
+            <p className="text-xs text-muted-foreground">Completed</p>
+            <p className="text-sm font-medium text-foreground">
               {run.completed_at
                 ? new Date(run.completed_at).toLocaleString()
                 : "—"}
@@ -151,39 +151,39 @@ export default function RunDetailPage() {
           </div>
           {run.error_message && (
             <div className="col-span-full">
-              <p className="text-xs text-zinc-500">Error</p>
-              <p className="text-sm text-red-400">{run.error_message}</p>
+              <p className="text-xs text-muted-foreground">Error</p>
+              <p className="text-sm text-destructive">{run.error_message}</p>
             </div>
           )}
         </CardContent>
       </Card>
 
       {/* Agent Timeline */}
-      <Card className="border-white/10 bg-zinc-900/50 backdrop-blur">
+      <Card className="border-border/50 bg-card/50 backdrop-blur">
         <CardHeader>
-          <CardTitle className="text-lg text-white">Agent Timeline</CardTitle>
+          <CardTitle className="text-lg text-foreground">Agent Timeline</CardTitle>
         </CardHeader>
         <CardContent>
           {logs.length === 0 ? (
-            <p className="text-sm text-zinc-500">No agent logs yet</p>
+            <p className="text-sm text-muted-foreground">No agent logs yet</p>
           ) : (
             <div className="relative space-y-0">
               {/* Vertical timeline line */}
-              <div className="absolute left-[18px] top-2 bottom-2 w-0.5 bg-white/10" />
+              <div className="absolute left-[18px] top-2 bottom-2 w-0.5 bg-border" />
 
               {logs.map((log, idx) => (
                 <div key={log.id} className="relative flex gap-4 pb-6">
                   {/* Timeline dot */}
-                  <div className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-zinc-900">
+                  <div className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-card">
                     {statusIcon[log.status] || (
-                      <Clock className="h-4 w-4 text-zinc-500" />
+                      <Clock className="h-4 w-4 text-muted-foreground" />
                     )}
                   </div>
 
                   {/* Content */}
-                  <div className="flex-1 rounded-lg border border-white/5 bg-zinc-900/50 p-4">
+                  <div className="flex-1 rounded-lg border border-border/50 bg-muted/30 p-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-zinc-200">
+                      <h3 className="text-sm font-semibold text-foreground">
                         {log.agent_name
                           .replace(/_/g, " ")
                           .replace(/\b\w/g, (c) => c.toUpperCase())}
@@ -192,13 +192,13 @@ export default function RunDetailPage() {
                         variant="secondary"
                         className={
                           statusColor[log.status] ||
-                          "bg-zinc-700 text-zinc-300"
+                          "bg-muted text-muted-foreground"
                         }
                       >
                         {log.status}
                       </Badge>
                     </div>
-                    <div className="mt-2 flex gap-4 text-xs text-zinc-500">
+                    <div className="mt-2 flex gap-4 text-xs text-muted-foreground">
                       <span>
                         Started:{" "}
                         {log.started_at ? new Date(log.started_at).toLocaleTimeString() : "—"}
@@ -211,7 +211,7 @@ export default function RunDetailPage() {
                       )}
                     </div>
                     {log.error_message && (
-                      <p className="mt-2 text-xs text-red-400">
+                      <p className="mt-2 text-xs text-destructive">
                         Error: {log.error_message}
                       </p>
                     )}
@@ -225,10 +225,10 @@ export default function RunDetailPage() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="border-white/10 bg-zinc-950 text-white sm:max-w-md">
+        <DialogContent className="border-border bg-background text-foreground sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Delete Workflow Run</DialogTitle>
-            <DialogDescription className="text-zinc-400">
+            <DialogDescription className="text-muted-foreground">
               Are you sure you want to delete this workflow run? This action cannot be undone and will delete all associated logs and reports.
             </DialogDescription>
           </DialogHeader>
@@ -237,7 +237,7 @@ export default function RunDetailPage() {
               type="button"
               variant="outline"
               onClick={() => setShowDeleteDialog(false)}
-              className="border-white/10"
+              className="border-border"
               disabled={deleting}
             >
               Cancel
@@ -246,7 +246,7 @@ export default function RunDetailPage() {
               type="button"
               variant="destructive"
               disabled={deleting}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
               onClick={handleDelete}
             >
               {deleting ? "Deleting..." : "Delete"}
