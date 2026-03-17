@@ -34,9 +34,20 @@ export default function DocumentationPage() {
       icon: Workflow,
       content: "Every automated report starts with a workflow. Our engine triggers a sequence of specialized agents to ensure data integrity and deep analysis:",
       items: [
-        { label: "Ingestion Agent", desc: "Validates data structure and detects core metrics." },
+        { label: "Smart Ingestion", desc: "Selects the best sheet from Excel files using keyword scoring." },
         { label: "Cleaning Agent", desc: "LLM-driven deduplication and anomaly correction." },
         { label: "Analysis Agent", desc: "Performs multi-dimensional trend analysis." }
+      ]
+    },
+    {
+      id: "observability",
+      title: "Agent Observability",
+      icon: Zap,
+      content: "Total transparency for every run. Our observability layer logs every agent execution with millisecond precision, documenting inputs, outputs, and performance metrics.",
+      bullets: [
+        "Review raw Input/Output JSON for every agent step.",
+        "Monitor execution duration and token consumption.",
+        "Deep-dive into error stacks for failed executions."
       ]
     },
     {

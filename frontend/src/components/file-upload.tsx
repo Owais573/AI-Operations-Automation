@@ -78,12 +78,12 @@ export function FileUpload({ onUpload, isUploading = false }: FileUploadProps) {
               </ul>
             </div>
             <div className="space-y-2">
-              <p className="font-semibold text-foreground">Automated Processing:</p>
+              <p className="font-semibold text-foreground">Multi-Sheet & Schema:</p>
               <ul className="list-disc list-inside space-y-1">
-                <li><span className="text-foreground">De-duplication:</span> Exact row matches are removed.</li>
-                <li><span className="text-foreground">Smart Fill:</span> Missing numbers filled with median.</li>
-                <li><span className="text-foreground">Outlier Flagging:</span> Anomalies detected via 3x IQR.</li>
-                <li><span className="text-foreground">AI Discovery:</span> Unexpected columns are autonomously analyzed.</li>
+                <li><span className="text-foreground">Smart Selection:</span> High-score sheet selected via keywords (sales, rev, stock).</li>
+                <li><span className="text-foreground">System Fallback:</span> If no keywords match, the first sheet is safely selected.</li>
+                <li><span className="text-foreground">AI Discovery:</span> Unexpected columns are autonomously indexed & analyzed.</li>
+                <li><span className="text-foreground">Deduplication:</span> Exact duplicate records are automatically purged.</li>
               </ul>
             </div>
           </div>
