@@ -172,11 +172,14 @@ export interface AgentLog {
   run_id: string;
   agent_name: string;
   status: string;
-  input_data: Record<string, unknown>;
-  output_data: Record<string, unknown>;
-  started_at: string;
-  completed_at: string;
+  input_summary: Record<string, unknown> | null;
+  output_summary: Record<string, unknown> | null;
+  duration_ms: number | null;
+  tokens_used: number | null;
   error_message: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
 }
 
 export interface Report {

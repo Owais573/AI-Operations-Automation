@@ -159,7 +159,7 @@ CSV / Mock ERP Data
 
 | Agent | Type | Key Capabilities |
 |-------|------|-----------------|
-| **Ingestion** | Data | Load CSV/Excel files, dynamic schema detection, extract metadata (row count, date range), detect duplicates and missing values |
+| **Ingestion** | Data | Smart multi-sheet Excel support with keyword-based sheet selection, dynamic schema detection, extract metadata (row count, date range), and automatic fallback with UI warnings. |
 | **Cleaning** | LLM-powered | Generates a structured cleaning plan via GPT-4o-mini: deduplication, null filling, type conversion, outlier flagging, text standardization |
 | **Aggregation** | Data (Pandas) | **Multi-Report Support**: Dynamic grouping by dimensions (product, region, department) and measures (revenue, stock_level, amount) based on report type |
 | **Analysis** | LLM-powered | **Generalized Insights**: Chain-of-thought analysis for Sales, Inventory, and Finance domains. Trend detection, anomaly alerting, and prioritized recommendations |
@@ -169,7 +169,7 @@ CSV / Mock ERP Data
 ### Base Agent Features
 
 All agents inherit from `BaseAgent` which provides:
-- **Lifecycle logging** -- automatic start/complete/fail logging to `agent_logs` table
+- **Full observability** -- Expandable logs in the Run Detail UI showing Input/Output JSON, duration, and token usage.
 - **Duration tracking** -- millisecond-precision execution timing
 - **Token counting** -- tracks LLM token usage per agent
 - **Error handling** -- structured `AgentExecutionError` with original error chain
@@ -201,7 +201,8 @@ The project is designed to handle diverse ERP and business datasets. Users can u
 - **Visual Workflow Scheduler UI** -- Manage, create, and monitor periodic workflow runs from the dashboard.
 - **Documentation Center** -- Integrated, LangChain-inspired documentation hub with sticky navigation and premium UX.
 - **Enhanced UX & Interface** -- Premium semantic Tailwind styling, perfect dark mode compatibility, and responsive layout with a bottom-dock mobile navigation.
-- **Full Observability** -- Every agent execution logged with duration, tokens, and I/O summaries.
+- **Full Observability** -- Detailed, expandable agent logs in the Run Detail UI showing Input/Output JSON blocks, precise duration, and token tracking.
+- **Smart Excel Handling** -- Autonomous selection of the most relevant sheet in multi-sheet Excel files using intelligent keyword scoring and substring matching.
 - **Dynamic Slack Delivery** -- Full parsing of Markdown into Slack Block Kit natively.
 - **Anomaly Detection Highlighting** -- AI autonomously flags and highlights critical anomalies in your data with proactive executive summaries.
 - **Scheduled Automation** -- Configurable periodic runs via APScheduler.
@@ -223,6 +224,7 @@ The project is designed to handle diverse ERP and business datasets. Users can u
 | Phase 9: Enterprise Upgrades | Done | Conversational BI, Visual Workflow Scheduler UI, Report RAG Search, Anomaly Highlighting, and fully Enhanced UX with semantic theming |
 | Phase 10: UX Refinement | Done | Optimized Chat reasoning, formatted markdown output, and Documentation Center implementation |
 | Phase 11: Final Polish | Done | Workspace cleanup, preservation of user uploads, and documentation finalized |
+| Phase 12: Observability & Excel | Done | Smart Multi-sheet Excel support and expanded Agent Log visibility (JSON I/O, duration, tokens) |
 
 ---
 

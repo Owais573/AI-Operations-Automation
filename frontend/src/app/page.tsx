@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   fetchDashboardStats,
   fetchDashboardActivity,
+  fetchWorkflowRun,
   uploadWorkflowFile,
   type DashboardStats,
   type ActivityItem,
@@ -72,10 +73,37 @@ export default function DashboardPage() {
   async function handleFileUpload(file: File) {
     setTriggering(true);
     try {
-      await uploadWorkflowFile(file, selectedReport);
+      const result = await uploadWorkflowFile(file, selectedReport);
       toast.success("Workflow Started", {
         description: `Successfully uploaded ${file.name}. View progress in 'Runs'.`,
       });
+
+      // ── Sheet warning check ─────────────────────────────────────────────
+      // If the backend detected a fallback_first_sheet scenario (no sheets
+      // matched the selected report type), show a non-blocking warning toast.
+      if (result?.run_id) {
+        const checkSheetWarning = async () => {
+          try {
+            const runDetail = await fetchWorkflowRun(result.run_id);
+            const ingestionLog = runDetail?.logs?.find(
+              (log) => log.agent_name === "ingestion_agent"
+            );
+            const sheetWarning = (ingestionLog?.output_summary?.metadata as Record<string, unknown>)?.sheet_warning as string | undefined;
+            if (sheetWarning) {
+              toast.warning("Sheet Mismatch Detected", {
+                description: sheetWarning,
+                duration: 8000,
+              });
+            }
+          } catch {
+            // Non-fatal — silently ignore if log isn't ready yet
+          }
+        };
+        // Delay to let the ingestion agent complete before we check
+        setTimeout(checkSheetWarning, 4000);
+      }
+      // ───────────────────────────────────────────────────────────────────
+
       loadData();
     } catch (err) {
       toast.error("Upload Failed", {

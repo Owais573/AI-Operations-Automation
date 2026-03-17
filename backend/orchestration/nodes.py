@@ -30,6 +30,7 @@ async def ingest_node(state: WorkflowState) -> Dict[str, Any]:
         agent = IngestionAgent(db=db)
         input_data = {
             "file_path": state.get("file_path"),
+            "workflow_type": state.get("workflow_type", "sales_report"),  # ← smart sheet selection
             "expected_columns": state.get("expected_columns", [])
         }
         result = await agent.execute(state["run_id"], input_data)

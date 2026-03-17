@@ -67,16 +67,19 @@ class DatabaseClient:
             storage_paths = []
             
             # Try to get from DB first
-            report_result = (
-                self.client.table("reports")
-                .select("pdf_storage_path")
-                .eq("run_id", run_id)
-                .maybe_single()
-                .execute()
-            )
-            
-            if report_result.data and report_result.data.get("pdf_storage_path"):
-                storage_paths.append(report_result.data["pdf_storage_path"])
+            try:
+                report_result = (
+                    self.client.table("reports")
+                    .select("pdf_storage_path")
+                    .eq("run_id", run_id)
+                    .maybe_single()
+                    .execute()
+                )
+                
+                if report_result and report_result.data and report_result.data.get("pdf_storage_path"):
+                    storage_paths.append(report_result.data["pdf_storage_path"])
+            except Exception as e:
+                logger.warning(f"Could not fetch report storage path for deletion: {e}")
             
             # Fallback/Guess: Older files used run_id/run_id.pdf
             fallback_path = f"{run_id}/{run_id}.pdf"
@@ -86,9 +89,13 @@ class DatabaseClient:
             if storage_paths:
                 from backend.services.storage import delete_file
                 for path in storage_paths:
-                    await delete_file(path)
+                    try:
+                        await delete_file(path)
+                    except Exception as e:
+                        logger.warning(f"Failed to delete storage file {path}: {e}")
 
             # 2. Delete the run (DB cascade handles logs, report record, and approvals)
+            # Use execute() and ignore the result since we assume success unless an exception is raised
             self.client.table("workflow_runs").delete().eq("id", run_id).execute()
             
             logger.info(f"Deleted workflow run and cleaned up storage paths: {storage_paths}")
