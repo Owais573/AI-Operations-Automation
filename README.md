@@ -45,7 +45,14 @@ uv sync
 cp .env.example .env
 # Edit .env with your keys (SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY)
 
-# 4. Start the backend server
+# 4. Initialize Database
+# Go to Supabase SQL Editor and run the contents of:
+# backend/database/schema.sql
+
+# 5. Create Storage Buckets
+# Create a public bucket named 'reports' in Supabase Storage.
+
+# 6. Start the backend server
 uv run uvicorn backend.main:app --reload --port 8000
 
 # 6. Visit API docs
@@ -73,7 +80,8 @@ ai-operations-automation/
 │   ├── api/                       # FastAPI route handlers
 │   ├── services/                  # External service integrations
 │   ├── database/
-│   │   └── db.py                  # Supabase client with CRUD helpers
+│   │   ├── db.py                  # Supabase client with CRUD helpers
+│   │   └── schema.sql             # SQL export for initial database setup
 │   ├── scheduler/                 # APScheduler jobs
 │   └── utils/
 │       ├── logger.py              # Structured colored logging
